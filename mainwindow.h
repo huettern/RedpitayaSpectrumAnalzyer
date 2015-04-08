@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 
+#include "spectrumplot.h"
+#include "redpitayainterface.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -15,8 +18,14 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+private slots:
+    void on_MainWindow_destroyed();
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *m_ui;
+    SpectrumPlot *m_plot;
+    RedpitayaInterface *m_rpif;
+
 };
 
 #endif // MAINWINDOW_H

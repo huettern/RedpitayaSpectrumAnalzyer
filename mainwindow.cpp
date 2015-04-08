@@ -3,12 +3,32 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    m_ui(new Ui::MainWindow)
 {
-    ui->setupUi(this);
+    // Setup UI
+    m_ui->setupUi(this);
+
+    //Setup Plot
+    m_plot = new SpectrumPlot(this, m_ui->plot);
+
+    //Setup Redpitaya object
+    m_rpif = new RedpitayaInterface(this);
+    m_ui->settingswidget->setRpifHandler(m_rpif);
+
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    m_rpif->Disconnect();
+
+    delete m_ui;
+}
+
+/**
+ * @brief MainWindow::on_MainWindow_destroyed
+ *
+ * Gets called if mainwindow is closed
+ */
+void MainWindow::on_MainWindow_destroyed()
+{
 }

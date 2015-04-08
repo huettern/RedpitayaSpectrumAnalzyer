@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui serialport
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = SpectrumAnalyzer
 TEMPLATE = app
@@ -14,9 +14,24 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    viewwidget.cpp \
+    spectrumplot.cpp \
+    redpitayainterface.cpp \
+    connectwrapper.cpp \
+    settingswidget.cpp \
+    fftwidget.cpp
 
 HEADERS  += mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    viewwidget.h \
+    spectrumplot.h \
+    redpitayainterface.h \
+    connectwrapper.h \
+    settingswidget.h \
+    fftwidget.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    viewwidget.ui \
+    settingswidget.ui \
+    fftwidget.ui
