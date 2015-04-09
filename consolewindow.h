@@ -27,7 +27,7 @@ private:
     bool inEcapeSeq;
 
 signals:
-    void getData(const QByteArray &data);
+    void getData(QString str);
 
 private slots:
     void on_sendButton_clicked();
