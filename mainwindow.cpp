@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //Setup Redpitaya object
     m_rpif = new RedpitayaInterface(this);
     m_ui->settingswidget->setRpifHandler(m_rpif);
+    connect(m_rpif, SIGNAL(setStatusMsg(QString,int)),
+            this, SLOT(setStatusBarMsg(QString,int)));
 
 }
 
@@ -31,4 +33,14 @@ MainWindow::~MainWindow()
  */
 void MainWindow::on_MainWindow_destroyed()
 {
+}
+
+/**
+ * @brief MainWindow::setStatusBarMsg
+ * @param str Message to be desplayed
+ * @param time Duration of the message. 0 = infinite
+ */
+void MainWindow::setStatusBarMsg (QString str, int time)
+{
+    m_ui->statusBar->showMessage(str, time);
 }

@@ -21,6 +21,9 @@ public:
 private slots:
     void on_MainWindow_destroyed();
 
+public slots:
+    void setStatusBarMsg (QString str, int time = 0);
+
 private:
     Ui::MainWindow *m_ui;
     SpectrumPlot *m_plot;
