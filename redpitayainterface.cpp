@@ -1,6 +1,7 @@
 #include "redpitayainterface.h"
 
 #include "connectwrapper.h"
+#include "helper.h"
 
 #include <QDebug>
 
@@ -31,6 +32,13 @@
 RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
 {
     rpState = DISCONNECTED;
+    rpStreamParams.channel = CH_A;
+    rpStreamParams.decimation = 8;
+    rpStreamParams.noEQ = false;
+    rpStreamParams.noShaping = false;
+    rpStreamParams.numKBytes = 16;
+    rpStreamParams.reportRate = false;
+    rpStreamParams.port = 1234;
     serial = new QSerialPort(this);
 }
 
@@ -46,19 +54,12 @@ RedpitayaInterface::~RedpitayaInterface()
  *
  * Connects to the redpitaya through SSH and opens TCP socket for RX
  */
-int RedpitayaInterface::Connect(const char* ipadr, int port,
+int RedpitayaInterface::Connect(const char* ipadr, unsigned int port,
                                 QString COM, ConsoleWindow *console)
 {
     qDebug() << "Connecting with ip:" << ipadr << "port:" << port;
-
-    // Open TCP socket for fast data reception
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0) //TCP
-    //if((sockfd = socket(AF_INET, SOCK_DGRAM, 0))< 0) //UDP
-    {
-       qDebug() << "\n Error : Could not create socket \n";
-       disconnect();
-       return errno;
-    }
+    rpStreamParams.port = port;
+    rpStreamParams.IP   = QString(ipadr);
 
     // Open console connection for commands and status
     if(COM == NULL) return -1;
@@ -89,6 +90,8 @@ int RedpitayaInterface::Connect(const char* ipadr, int port,
         return errno;
     }
 
+
+    writeData("/opt/ddrdump/enableddrdump.sh\n");
     writeData("\n\nmonitor 0x40000030 0xff\n");
     // connect serial output to console
     m_console = console;
@@ -109,8 +112,11 @@ int RedpitayaInterface::Connect(const char* ipadr, int port,
  */
 void RedpitayaInterface::Disconnect()
 {
-    // Close TCP socket
-    close(sockfd);
+    // stop streaming
+    if(rpState == RUNNING) stopStream();
+
+    /// unload kernel module
+    writeData("\n\nrmmod rpad.ko\n");
 
     // Close console connection for commands and status
     if (serial->isOpen())
@@ -125,6 +131,22 @@ void RedpitayaInterface::Disconnect()
 }
 
 /**
+ * @brief RedpitayaInterface::singleAcquisition
+ * @return Status
+ *
+ * Runs a single acquisition and then stops.
+ */
+int RedpitayaInterface::singleAcquisition()
+{
+    startServer();
+    ///<! Give the server time to start
+    Helper::msleep(30);
+    rcvData();
+    stopServer();
+    return 0;
+}
+
+/**
  * @brief RedpitayaInterface::startStream
  * @return Status
  *
@@ -133,6 +155,7 @@ void RedpitayaInterface::Disconnect()
 int RedpitayaInterface::startStream ()
 {
     startServer();
+
 
     return 0;
 }
@@ -150,6 +173,27 @@ int RedpitayaInterface::stopStream ()
     return 0;
 }
 
+/**
+ * @brief RedpitayaInterface::getDataArray
+ * @param dest Pointer to a int16_t array
+ * @param n number of elements to copy
+ * @return effective copied data
+ *
+ * Copies the most recent Data to the destination
+ */
+size_t RedpitayaInterface::getDataArray (void* dest, size_t n)
+{
+    if(n > numbytes)
+    {
+        memcpy(dest, data_buf, numbytes);
+        return numbytes;
+    }
+    else
+    {
+        memcpy(dest, data_buf, n);
+        return n;
+    }
+}
 
 /****************************************************************************
  * PRIVATE SECTION
@@ -185,9 +229,34 @@ void RedpitayaInterface::writeData(QString str)
  */
 void RedpitayaInterface::startServer()
 {
+    // set leds
     writeData("\n\nmonitor 0x40000030 0xF0\n");
-    writeData("/opt/ddrdump/preview/preview_rp_remote_acquire -p 1234 -m 2  -r -c 0 -d 8 -k 4096");
 
+    // Create command from Parameter structure
+    QString cmd_base = "/opt/ddrdump/preview/preview_rp_remote_acquire ";
+    QString port = QString().sprintf("-p %d ", rpStreamParams.port);
+    QString mode = QString().sprintf("-m 2 ");
+    QString chan = QString().sprintf("-c %d ", rpStreamParams.channel);
+    QString dec  = QString().sprintf("-d %d ", rpStreamParams.decimation);
+    QString num  = QString().sprintf("-k %d ", rpStreamParams.numKBytes);
+
+    rpStreamParams.reportRate = true;
+
+    QString flags = NULL;
+    if(rpStreamParams.noEQ)
+        flags.append("-e ");
+    if(rpStreamParams.noShaping)
+        flags.append("-s ");
+    if(rpStreamParams.reportRate)
+        flags.append("-r ");
+
+    QString cmd = cmd_base + port + mode +
+            chan + dec + num + flags + QString("\n");
+
+    // Execute command, start server
+    writeData(cmd);
+    serial->flush();
+    qDebug() << cmd;
     rpState = RUNNING;
 }
 
@@ -198,6 +267,8 @@ void RedpitayaInterface::startServer()
  */
 void RedpitayaInterface::stopServer()
 {
+    // send escape sequence
+    writeData("\x03");
     writeData("\n\nmonitor 0x40000030 0x0f\n");
     rpState = CONNECTED;
 }
@@ -207,37 +278,63 @@ void RedpitayaInterface::stopServer()
  *
  * Opens the network socket and receives n bytes
  */
-int RedpitayaInterface::getData ()
+int RedpitayaInterface::rcvData ()
 {
+    QElapsedTimer timer;
+    timer.start();
+
+    // get requested number of bytes
+    numkbytes = rpStreamParams.numKBytes;
+    numbytes = numkbytes*1024;
+
+    // Open TCP socket for fast data reception
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0) //TCP
+    //if((sockfd = socket(AF_INET, SOCK_DGRAM, 0))< 0) //UDP
+    {
+       qDebug() << "\n Error : Could not create socket \n";
+       disconnect();
+       return errno;
+    }
+
     // allocate memory to hold the converted short values
     data_buf = (int16_t*) malloc (2*numbytes);
     if (data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
 
-    // open network socket
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0))< 0) //TCP
-    //if((sockfd = socket(AF_INET, SOCK_DGRAM, 0))< 0) //UDP
-    {
-       printf("\n Error : Could not create socket \n");
-       return 1;
-    }
 
-    //connect to server
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-    serv_addr.sin_addr.s_addr = inet_addr(hostName.toStdString().c_str());
-
-    if(socket_connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0)
+    /*! try to establish a connection over the socket if not done so already */
+    if(rpState != TCP_CONNECTED)
     {
-       printf("\n Error : Connect Failed \n");
-       return 1;
+        //set params
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(rpStreamParams.port);
+        serv_addr.sin_addr.s_addr = inet_addr(rpStreamParams.IP.toStdString().c_str());
+        // connect
+        if(socket_connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr))<0)
+        {
+           qDebug() << "\n Error : Connect Failed";
+           qDebug() << " Err: " << errno << strerror(errno);
+           qDebug() << "\n Sockfd=" << sockfd;
+           //return 1;
+        }
+        else
+        {
+            qDebug() << "Connection established";
+            //rpState = TCP_CONNECTED;
+        }
     }
 
     // read from socket buffer
     n_packets = recv(sockfd, data_buf, 2*numbytes, MSG_WAITALL);
-    printf("n=%d numbytes=%d\n", n_packets, numbytes);
+    //printf("n=%d numbytes=%d\n", n_packets, numbytes);
+
+    qDebug() << "n=" << n_packets << "numbytes req" << numbytes;
+
+    // Close TCP socket
+    close(sockfd);
 
     // done
     //DataReady(data_buf);
-
+    qDebug() << "rcv time = " << timer.elapsed();
+    emit dataReady();
     return 0;
 }
