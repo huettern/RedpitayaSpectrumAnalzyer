@@ -26,8 +26,6 @@ ConsoleWindow::~ConsoleWindow()
 
 void ConsoleWindow::putData(const QByteArray &data)
 {
-    qDebug() << "Put";
-
 //    for(int i = 0; i < data.size(); i++)
 //    {
 //        // if we already are in a esc seq, clear byte if not end
