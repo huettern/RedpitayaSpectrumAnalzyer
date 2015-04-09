@@ -21,6 +21,10 @@ public:
 private slots:
     void on_MainWindow_destroyed();
 
+    void on_RUNButton_clicked();
+
+    void on_STOPButton_clicked();
+
 public slots:
     void setStatusBarMsg (QString str, int time = 0);
 

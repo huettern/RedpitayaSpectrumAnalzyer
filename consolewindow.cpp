@@ -51,5 +51,6 @@ void ConsoleWindow::putData(const QByteArray &data)
 void ConsoleWindow::on_sendButton_clicked()
 {
     QString str = ui->commandLine->text() + '\n';
+    ui->commandLine->selectAll();
     emit getData(str);
 }

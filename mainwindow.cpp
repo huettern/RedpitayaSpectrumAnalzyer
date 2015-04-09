@@ -44,3 +44,13 @@ void MainWindow::setStatusBarMsg (QString str, int time)
 {
     m_ui->statusBar->showMessage(str, time);
 }
+
+void MainWindow::on_RUNButton_clicked()
+{
+    m_rpif->startStream();
+}
+
+void MainWindow::on_STOPButton_clicked()
+{
+    m_rpif->stopStream();
+}

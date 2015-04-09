@@ -23,13 +23,32 @@ public:
                 QString COM, ConsoleWindow* console);
     void Disconnect();
 
+    /*! Red pitaya states */
+    enum enRpState
+    {
+        DISCONNECTED, ///< Rp is not connected
+        CONNECTED,    ///< Rp is connected via Console
+        RUNNING      ///< The sampling and trasmission module is running
+    };
+
+    /*! Red pitaya streaming parameters */
+    typedef struct
+    {
+
+
+    } tsRPStreamParams;
+
+    int startStream ();
+    int stopStream ();
+
 signals:
+    void setStatusMsg (QString, int);
 
 public slots:
 
 private slots:
     void readData();
-    void writeData(const QByteArray &data);
+    void writeData(QString str);
 
 private:
     //Output Buffer
@@ -56,6 +75,11 @@ private:
 
     // Private methods
     int getData ();
+    void startServer();
+    void stopServer();
+
+    // Data
+    enRpState rpState;
 
 };
 

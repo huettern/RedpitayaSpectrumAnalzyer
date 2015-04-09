@@ -23,9 +23,14 @@
 #include <arpa/inet.h>
 
 
+/****************************************************************************
+ * PUBLIC SECTION
+ -----------------------------------------------------------------------*//**
+ * @publicsection
+ ****************************************************************************/
 RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
 {
-
+    rpState = DISCONNECTED;
     serial = new QSerialPort(this);
 }
 
@@ -56,6 +61,7 @@ int RedpitayaInterface::Connect(const char* ipadr, int port,
     }
 
     // Open console connection for commands and status
+    if(COM == NULL) return -1;
     serial->setPortName(COM);
     serial->setBaudRate(QSerialPort::Baud115200);
     serial->setDataBits(QSerialPort::Data8);
@@ -83,15 +89,16 @@ int RedpitayaInterface::Connect(const char* ipadr, int port,
         return errno;
     }
 
-    QString test = "monitor 0x40000030 0xff\n";
-    serial->write(test.toLocal8Bit());
-
+    writeData("\n\nmonitor 0x40000030 0xff\n");
     // connect serial output to console
     m_console = console;
     connect(serial, SIGNAL(readyRead()), this, SLOT(readData()));
-    connect(m_console, SIGNAL(getData(QByteArray)), this, SLOT(writeData(QByteArray)));
+    connect(m_console, SIGNAL(getData(QString)), this, SLOT(writeData(QString)));
 
     qDebug() << "\nConnected\n";
+    emit setStatusMsg("Redpitaya Connected!", 0);
+
+    rpState = CONNECTED;
     return 0;
 }
 
@@ -108,14 +115,47 @@ void RedpitayaInterface::Disconnect()
     // Close console connection for commands and status
     if (serial->isOpen())
     {
-        QString test = "\n\nmonitor 0x40000030 0x00\n";
-        serial->write(test.toLocal8Bit());
-        serial->flush();
+        writeData("\n\nmonitor 0x40000030 0x00\n");
+        serial->waitForBytesWritten(1000);
         serial->close();
     }
     qDebug() << "Disconnected";
+    emit setStatusMsg("Redpitaya Disconnected!", 0);
+    rpState = DISCONNECTED;
 }
 
+/**
+ * @brief RedpitayaInterface::startStream
+ * @return Status
+ *
+ * Starts the data stream from Redpitaya to PC
+ */
+int RedpitayaInterface::startStream ()
+{
+    startServer();
+
+    return 0;
+}
+
+/**
+ * @brief RedpitayaInterface::stopStream
+ * @return status
+ *
+ * Stops the data stream from Redpitaya to PC
+ */
+int RedpitayaInterface::stopStream ()
+{
+    stopServer();
+
+    return 0;
+}
+
+
+/****************************************************************************
+ * PRIVATE SECTION
+ -----------------------------------------------------------------------*//**
+ * @privatesection
+ ****************************************************************************/
 /**
  * @brief RedpitayaInterface::readData
  *
@@ -133,9 +173,33 @@ void RedpitayaInterface::readData()
  *
  * Slot gets called to write data to the redpitaya
  */
-void RedpitayaInterface::writeData(const QByteArray &data)
+void RedpitayaInterface::writeData(QString str)
 {
-    serial->write(data);
+    serial->write(str.toLocal8Bit());
+}
+
+/**
+ * @brief RedpitayaInterface::startServer
+ *
+ * Starts the sampling and transmission server
+ */
+void RedpitayaInterface::startServer()
+{
+    writeData("\n\nmonitor 0x40000030 0xF0\n");
+    writeData("/opt/ddrdump/preview/preview_rp_remote_acquire -p 1234 -m 2  -r -c 0 -d 8 -k 4096");
+
+    rpState = RUNNING;
+}
+
+/**
+ * @brief RedpitayaInterface::stopServer
+ *
+ * Stops the sampling and transmission server
+ */
+void RedpitayaInterface::stopServer()
+{
+    writeData("\n\nmonitor 0x40000030 0x0f\n");
+    rpState = CONNECTED;
 }
 
 /**
