@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_rpif, SIGNAL(setStatusMsg(QString,int)),
             this, SLOT(setStatusBarMsg(QString,int)));
 
+    //Setup FFT
+    m_fft = new FFT(this, m_ui->plot);
 }
 
 MainWindow::~MainWindow()
@@ -47,10 +49,14 @@ void MainWindow::setStatusBarMsg (QString str, int time)
 
 void MainWindow::on_RUNButton_clicked()
 {
-    m_rpif->startStream();
 }
 
 void MainWindow::on_STOPButton_clicked()
 {
-    m_rpif->stopStream();
+}
+
+void MainWindow::on_SINGLEButton_clicked()
+{
+    m_rpif->singleAcquisition();
+    m_fft->singleConversion();
 }

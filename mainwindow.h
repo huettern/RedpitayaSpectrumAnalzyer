@@ -5,6 +5,7 @@
 
 #include "spectrumplot.h"
 #include "redpitayainterface.h"
+#include "fft.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,13 +26,16 @@ private slots:
 
     void on_STOPButton_clicked();
 
+    void on_SINGLEButton_clicked();
+
 public slots:
     void setStatusBarMsg (QString str, int time = 0);
 
 private:
-    Ui::MainWindow *m_ui;
-    SpectrumPlot *m_plot;
-    RedpitayaInterface *m_rpif;
+    Ui::MainWindow       *m_ui;
+    SpectrumPlot         *m_plot;
+    RedpitayaInterface   *m_rpif;
+    FFT                  *m_fft;
 
 };
 
