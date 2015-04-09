@@ -41,7 +41,8 @@ RedpitayaInterface::~RedpitayaInterface()
  *
  * Connects to the redpitaya through SSH and opens TCP socket for RX
  */
-int RedpitayaInterface::Connect(const char* ipadr, int port, QString COM)
+int RedpitayaInterface::Connect(const char* ipadr, int port,
+                                QString COM, ConsoleWindow *console)
 {
     qDebug() << "Connecting with ip:" << ipadr << "port:" << port;
 
@@ -85,6 +86,11 @@ int RedpitayaInterface::Connect(const char* ipadr, int port, QString COM)
     QString test = "monitor 0x40000030 0xff\n";
     serial->write(test.toLocal8Bit());
 
+    // connect serial output to console
+    m_console = console;
+    connect(serial, SIGNAL(readyRead()), this, SLOT(readData()));
+    connect(m_console, SIGNAL(getData(QByteArray)), this, SLOT(writeData(QByteArray)));
+
     qDebug() << "\nConnected\n";
     return 0;
 }
@@ -110,6 +116,27 @@ void RedpitayaInterface::Disconnect()
     qDebug() << "Disconnected";
 }
 
+/**
+ * @brief RedpitayaInterface::readData
+ *
+ * Is called when Serial data is received
+ */
+void RedpitayaInterface::readData()
+{
+    QByteArray data = serial->readAll();
+    m_console->putData(data);
+}
+
+/**
+ * @brief RedpitayaInterface::writeData
+ * @param data
+ *
+ * Slot gets called to write data to the redpitaya
+ */
+void RedpitayaInterface::writeData(const QByteArray &data)
+{
+    serial->write(data);
+}
 
 /**
  * @brief getData

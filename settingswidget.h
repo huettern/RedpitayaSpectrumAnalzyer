@@ -4,7 +4,7 @@
 #include <QWidget>
 
 #include "redpitayainterface.h"
-
+#include "consolewindow.h"
 
 namespace Ui {
 class SettingsWidget;
@@ -27,9 +27,13 @@ private slots:
 
     void on_disconnectButton_clicked();
 
+    void on_openConsoleButton_clicked();
+
 private:
     Ui::SettingsWidget *ui;
     RedpitayaInterface* m_rpif;
+    ConsoleWindow* m_consolewindow;
+
 
     void lockInputs();
     void unlockInputs();

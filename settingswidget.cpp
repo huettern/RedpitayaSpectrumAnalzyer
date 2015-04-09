@@ -8,6 +8,7 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
     ui(new Ui::SettingsWidget)
 {
     ui->setupUi(this);
+    m_consolewindow = new ConsoleWindow();
 
     // list serial ports
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
@@ -32,7 +33,8 @@ void SettingsWidget::on_connectButton_clicked()
     retval = m_rpif->Connect(
                 ui->IPLineEdit->text().toStdString().c_str(),
                 ui->portSpinBox->value(),
-                ui->COMPortsComboBox->currentText());
+                ui->COMPortsComboBox->currentText(),
+                m_consolewindow);
     if(retval == 0)
     {
         ui->statusLabel->setText("Connected");
@@ -73,3 +75,13 @@ void SettingsWidget::unlockInputs()
     ui->portSpinBox->setEnabled(true);
 }
 
+void SettingsWidget::on_openConsoleButton_clicked()
+{
+    //open console window if not open yet
+    if(m_consolewindow->isVisible() == false)
+    {
+        m_consolewindow->setWindowFlags(
+                    Qt::WindowStaysOnTopHint);
+        m_consolewindow->show();
+    }
+}

@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     redpitayainterface.cpp \
     connectwrapper.cpp \
     settingswidget.cpp \
-    fftwidget.cpp
+    fftwidget.cpp \
+    consolewindow.cpp
 
 HEADERS  += mainwindow.h \
     qcustomplot.h \
@@ -29,9 +30,11 @@ HEADERS  += mainwindow.h \
     redpitayainterface.h \
     connectwrapper.h \
     settingswidget.h \
-    fftwidget.h
+    fftwidget.h \
+    consolewindow.h
 
 FORMS    += mainwindow.ui \
     viewwidget.ui \
     settingswidget.ui \
-    fftwidget.ui
+    fftwidget.ui \
+    consolewindow.ui
