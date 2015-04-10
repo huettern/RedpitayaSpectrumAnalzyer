@@ -67,6 +67,7 @@ public:
 
     // Data handling
     size_t getDataArray (void* dest, size_t n);
+    size_t getDataArraySize ();
 
 signals:
     void setStatusMsg (QString, int);

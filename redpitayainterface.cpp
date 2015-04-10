@@ -91,6 +91,9 @@ int RedpitayaInterface::Connect(const char* ipadr, unsigned int port,
     }
 
 
+    // send escape sequence
+    writeData("\x03");
+    // load kernel module
     writeData("/opt/ddrdump/enableddrdump.sh\n");
     writeData("\n\nmonitor 0x40000030 0xff\n");
     // connect serial output to console
@@ -114,6 +117,9 @@ void RedpitayaInterface::Disconnect()
 {
     // stop streaming
     if(rpState == RUNNING) stopStream();
+
+    // send escape sequence
+    writeData("\x03");
 
     /// unload kernel module
     writeData("\n\nrmmod rpad.ko\n");
@@ -193,6 +199,17 @@ size_t RedpitayaInterface::getDataArray (void* dest, size_t n)
         memcpy(dest, data_buf, n);
         return n;
     }
+}
+
+/**
+ * @brief getDataArraySize
+ * @return Size of the data array in number of int16_t
+ *
+ *
+ */
+size_t RedpitayaInterface::getDataArraySize ()
+{
+    return numbytes;
 }
 
 /****************************************************************************
