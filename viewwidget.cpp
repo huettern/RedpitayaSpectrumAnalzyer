@@ -1,12 +1,16 @@
 #include "viewwidget.h"
 #include "ui_viewwidget.h"
 
+#include <QDebug>
+
 ViewWidget::ViewWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ViewWidget)
 {
     ui->setupUi(this);
-    rawplot = new PlotView();
+
+    rawplotOpen = false;
+    //rawplot = new PlotView();
 }
 
 ViewWidget::~ViewWidget()
@@ -16,6 +20,30 @@ ViewWidget::~ViewWidget()
 
 void ViewWidget::on_rawplotButton_clicked()
 {
+    if(rawplotOpen == true)
+    {
+        rawplot->raise();
+        return;
+    }
+    rawplotOpen = true;
+
+    rawplot = new PlotView(this);
+    rawplot->setRPif(rpif);
+    connect(rawplot, SIGNAL(plotViewDestroyed()),
+            this,    SLOT(on_rawplotClsoed()));
+    connect(rpif,    SIGNAL(dataReady()),
+            rawplot, SLOT(on_dataChanged()));
     rawplot->show();
-    rawplot->raise();
+}
+
+void ViewWidget::setRPif(RedpitayaInterface* ifc)
+{
+    rpif = ifc;
+}
+
+void ViewWidget::on_rawplotClsoed()
+{
+    qDebug() << "ViewWidget::on_rawplotClsoed()";
+    rawplotOpen = false;
+    delete rawplot;
 }
