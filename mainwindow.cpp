@@ -19,6 +19,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Setup FFT
     m_fft = new FFT(this, m_ui->plot);
+
+    /*! Setup other widgets */
+    m_ui->viewWidget->setRPif(m_rpif);
 }
 
 MainWindow::~MainWindow()
@@ -57,6 +60,7 @@ void MainWindow::on_STOPButton_clicked()
 
 void MainWindow::on_SINGLEButton_clicked()
 {
+    // TODO: do nothing if not connected
     m_rpif->singleAcquisition();
     m_fft->singleConversion();
 }

@@ -1,11 +1,19 @@
 #include "plotview.h"
 #include "ui_plotview.h"
 
+#include <QDebug>
+
+#include <stdlib.h>
+#include <stdint.h>
+
 PlotView::PlotView(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::PlotView)
 {
     ui->setupUi(this);
+
+    x_vector =      QVector<double>(1);
+    y_vector =      QVector<double>(1);
 
     // Set design parameter
     // create graph and assign data to it:
@@ -58,16 +66,64 @@ PlotView::PlotView(QWidget *parent) :
     axisRectGradient.setColorAt(0, QColor(80, 80, 80));
     axisRectGradient.setColorAt(1, QColor(30, 30, 30));
     ui->plot->axisRect()->setBackground(axisRectGradient);
-
-    ui->plot->replot();
 }
 
 PlotView::~PlotView()
 {
+    qDebug() << "PlotView::~PlotView()";
     delete ui;
+}
+
+void PlotView::setRPif(RedpitayaInterface* ifc)
+{
+    rpif = ifc;
 }
 
 void PlotView::on_quitButton_clicked()
 {
-    this->hide();
+    emit plotViewDestroyed();
+    //this->hide();
+}
+
+void PlotView::on_dataChanged()
+{
+    size_t n;
+    qDebug() << "on_dataChanged";
+    size_t numbytes = rpif->getDataArraySize();
+
+    // allocate memory to hold the converted short values
+    data_buf = (int16_t*) malloc (2*numbytes);
+    if (data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+
+    // Get data
+    n = rpif->getDataArray(data_buf, numbytes);
+
+    // Copy into vectors
+    x_vector.clear();
+    y_vector.clear();
+    x_vector.resize(n);
+    y_vector.resize(n);
+    for(size_t i = 0; i < n; i++)
+    {
+        y_vector[i] = data_buf[i];
+        x_vector[i] = i;
+    }
+
+    // Set plot data
+    ui->plot->graph(0)->setData(x_vector, y_vector);
+    //ui->plot->rescaleAxes();
+    ui->plot->replot();
+
+    // Doner
+}
+
+void PlotView::on_autoScaleButton_clicked()
+{
+    ui->plot->rescaleAxes();
+    ui->plot->replot();
+}
+
+void PlotView::closeEvent (QCloseEvent *event)
+{
+    emit plotViewDestroyed();
 }
