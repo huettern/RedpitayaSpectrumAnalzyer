@@ -189,14 +189,18 @@ int RedpitayaInterface::stopStream ()
  */
 size_t RedpitayaInterface::getDataArray (void* dest, size_t n)
 {
+    // TODO: rename numbytes to more useful name
+    // TODO: verify this routine
     if(n > numbytes)
     {
         memcpy(dest, data_buf, numbytes);
+        qDebug() << "numbytes" << numbytes;
         return numbytes;
     }
     else
     {
-        memcpy(dest, data_buf, n);
+        memcpy(dest, data_buf, n*2);
+        qDebug() << "n" << n;
         return n;
     }
 }
