@@ -105,7 +105,8 @@ void PlotView::on_dataChanged()
     y_vector.resize(n);
     for(size_t i = 0; i < n; i++)
     {
-        y_vector[i] = data_buf[i];
+        // calculate voltage
+        y_vector[i] = ((double)data_buf[i])/30678;
         x_vector[i] = i;
     }
 
