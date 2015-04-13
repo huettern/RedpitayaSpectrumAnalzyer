@@ -5,47 +5,41 @@
 
 
 
-//  ****************************************************************************************
+//  **************************************************************************
 //  DEFINES
-//  ****************************************************************************************
+//  **************************************************************************
 #define     MIA_FFT_IDEAL_FILTER					0
 #define     MIA_FFT_BUTTERWORTH_FILTER				1
 #define     MIA_FFT_GAUSS_FILTER					2
 
 
-//  ****************************************************************************************
+//  **************************************************************************
 //  TEMPLATE FUNCTIONS
-//  ****************************************************************************************
-//template<typename T1_> void fMIA_FFT2D(MIA_IMGHDR *pImgHdr,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp);
-//template<typename T1_> void fMIA_FFT2D_AmplSpec(MIA_IMGHDR *pImgHdrIn,  T1_ *pImgIn, MIA_IMGHDR *pImgHdrOut, T1_ *pImgOut);
-//template<typename T1_> void fMIA_FFT2D_LogPowSpec(MIA_IMGHDR *pImgHdrIn,  T1_ *pImgIn, MIA_IMGHDR *pImgHdrOut, T1_ *pImgOut);
-//template<typename T1_> void fMIA_FFT2D_PhaseCorr(MIA_IMGHDR *pImgHdrIn,  T1_ *pImgIn, MIA_IMGHDR *pImgHdrOut,  T1_ *pImgOut);
-//template<typename T1_> void fMIA_FFT2D_LP_Mask(MIA_IMGHDR *pImgHdr, T1_ *pImg , float f0, unsigned  long ulType, int n);
-//template<typename T1_> void fMIA_FFT2D_HP_Mask(MIA_IMGHDR *pImgHdr, T1_ *pImg , float f0, unsigned  long ulType, int n);
-//template<typename T1_> void fMIA_FFT2D_BP_Mask(MIA_IMGHDR *pImgHdr, T1_ *pImg , float f0, float f1, unsigned  long ulType, int n);
-//template<typename T1_> void fMIA_FFT2D_BR_Mask(MIA_IMGHDR *pImgHdr, T1_ *pImg , float f0, float f1, unsigned  long ulType, int n);
-
-template<typename T1_> void fMIA_FFT1D(int iWidth,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp);
-template<typename T1_> void fMIA_FFT1D_AmplSpec(int iWidth,  T1_ *pIn, T1_ *pOut);
+//  **************************************************************************
+template<typename T1_> void fMIA_FFT1D(int iWidth,  T1_ *pa,
+                                       int  iSign, int *iWsp, T1_ *Wsp);
+template<typename T1_> void fMIA_FFT1D_AmplSpec(int iWidth,
+                                                T1_ *pIn, T1_ *pOut);
 
 
-#define FFT_ROI_SIZE 16*1024
-int               iWidth;                               // Anzahl Elemente
-float             *flData;                 // Daten
-int               *ip;                  // integer Workspace
-float             *w;                   // float Workspace
-float             *flAmpSpec;         // spectrum
+float             *flData;      // in Daten
+int               *ip;          // integer Workspace
+float             *w;           // float Workspace
+float             *flAmpSpec;   // spectrum
 
 
 
+/****************************************************************************
+ * PUBLIC SECTION
+ -----------------------------------------------------------------------*//**
+ * @publicsection
+ ****************************************************************************/
 FFT::FFT(QObject *parent) : QObject(parent)
 {
-    iWidth = FFT_ROI_SIZE;
 }
 
 FFT::~FFT()
 {
-
 }
 
 /**
@@ -55,22 +49,31 @@ FFT::~FFT()
  */
 void FFT::singleConversion()
 {
+    QElapsedTimer tim;
+    tim.start();
     // Get Data
     getRawData();
+
     iFFTWidth = iNSamples;
+    iPlotWidth = (iFFTWidth/2) + 1;
 
     // Allocate memory for FFT
     allocData();
 
     // Calculate Data
+    ip[0] = 0;
     fMIA_FFT1D(iFFTWidth, flData, 1 , ip, w); // Fourier Transforamtion
     fMIA_FFT1D_AmplSpec(iFFTWidth, flData, flAmpSpec); // Spektrum
 
     // Display Data
     plotData();
 
+    // Publish Data
+    publishData();
+
     // clean up
     freeData();
+    qDebug() << "FFT time" << tim.nsecsElapsed();
 }
 
 
@@ -85,8 +88,15 @@ void FFT::setPlot(QCustomPlot *plt)
 }
 
 
+/****************************************************************************
+ * PRIATE SECTION
+ -----------------------------------------------------------------------*//**
+ * @privatesection
+ ****************************************************************************/
+
 void FFT::allocData ()
 {
+    qDebug() << "Allocating with iFFTWidth = " << iFFTWidth;
     ip = (int*) malloc (sizeof(int)*2*iFFTWidth);
     if (ip == NULL) {fputs ("Memory error buf",stderr); exit (2);}
     w = (float*) malloc (sizeof(float)*2*iFFTWidth);
@@ -108,7 +118,6 @@ void FFT::freeData ()
 
 void FFT::getRawData ()
 {
-    size_t n;
     qDebug() << "on_dataChanged";
     iNSamples = rpif->getDataArraySize();
 
@@ -119,38 +128,51 @@ void FFT::getRawData ()
     if (flData == NULL) {fputs ("Memory error buf",stderr); exit (2);}
 
     // Get data
-    n = rpif->getDataArray(data_buf, iNSamples);
-
-    qDebug() << "iNSamples: " << iNSamples << "FFT_ROI_SIZE" << FFT_ROI_SIZE;
+    rpif->getDataArray(data_buf, iNSamples);
 
     //convert to float
     for(int i = 0; i < iNSamples; i++)
     {
-        flData[i] = (float)data_buf[i];
+        flData[i] = ((float)data_buf[i])/30678;
     }
 }
 
 void FFT::plotData()
 {
+    double rate = rpif->getSamplerate();
     // convert to QVector
     x_vector.clear();
     y_vector.clear();
-    x_vector.resize(FFT_ROI_SIZE);
-    y_vector.resize(FFT_ROI_SIZE);
+    x_vector.resize(iPlotWidth);
+    y_vector.resize(iPlotWidth);
 
-    for(size_t i = 0; i < FFT_ROI_SIZE; i++)
+    for(int i = 0; i < iPlotWidth; i++)
     {
-        y_vector[i] = (double)flAmpSpec[i];
-        x_vector[i] = i;
+        y_vector[i] = (double)flAmpSpec[i] / (iFFTWidth/2);
+        x_vector[i] = i*(rate/iFFTWidth);
     }
 
     // Set plot data
     plot->graph(0)->setData(x_vector, y_vector);
-    plot->graph(0)->getPlotData();
     plot->rescaleAxes();
     plot->replot();
 }
 
+void FFT::publishData()
+{
+    mutex.lock();
+
+    data.mag.resize(iFFTWidth);
+    data.freq.resize(iFFTWidth);
+
+    memcpy(data.mag.data(), y_vector.data(), iPlotWidth);
+    memcpy(data.freq.data(), x_vector.data(), iPlotWidth);
+
+    data.width = iFFTWidth;
+    data.binsize = rpif->getSamplerate() / iFFTWidth;
+
+    mutex.unlock();
+}
 
 /****************************************************************************
  * MIAFFT SECTION
@@ -187,7 +209,6 @@ void makewt(int nw, int *iWsp, T1_ *Wsp)
             Wsp[nw - j] = y;
             Wsp[nw - j + 1] = x;
         }
-        // TODO:
         bitrv2(nw, iWsp + 2, w);
     }
 }
@@ -1002,7 +1023,6 @@ void fMIA_FFT1D(int iWidth,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp)
     nw = iWsp[0];
     if (n > (nw << 2)) {
         nw = n >> 2;
-        // TODO:
         makewt(nw, iWsp, w);
     }
     nc = iWsp[1];
@@ -1015,7 +1035,6 @@ void fMIA_FFT1D(int iWidth,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp)
 
 
     if (iSign < 0) {
-        //TODO:
         cftfrow(1, iWidth, pa, w);
         pai = &pa[0];
         pai[1] = 0.5f * (pai[0] - pai[1]);
@@ -1030,7 +1049,6 @@ void fMIA_FFT1D(int iWidth,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp)
         if (iWidth > 4) {
             bitrv2col(1, iWidth, iWsp + 2, pa);
         }
-        //TODO:
         cftbcol(1, iWidth, pa, w);
         if (iWidth > 4) {
             rftbcol(1, iWidth, pa, nc, Wsp + nw);
@@ -1051,6 +1069,8 @@ void fMIA_FFT1D(int iWidth,  T1_ *pa, int  iSign, int *iWsp, T1_ *Wsp)
 template<typename T1_>
 void fMIA_FFT1D_AmplSpec(int iWidth,  T1_ *pIn, T1_ *pOut)
 {
+ /*
+    // Copy the whole Spectrum to the output (DC Part in center)
     int		x,cx;
     T1_		re, im,s;
     T1_		*pa1,*po1;
@@ -1072,5 +1092,25 @@ void fMIA_FFT1D_AmplSpec(int iWidth,  T1_ *pIn, T1_ *pOut)
     pOut[cx] = abs(re);
     re = pIn[1];
     pOut[0] = abs(re);
+    */
+
+    // Copy from cell 0 = DC to iWidth/2. Rest of outputarray is
+    // left untouched, dont use!!!
+    int		x,cx;
+     T1_		re, im,s;
+
+     cx = iWidth/2;
+
+     for (x = 1; x < cx ; x++) {
+         re = pIn[2*x];         // real part
+         im = pIn[2*x+1];       // imaginary part
+         s = sqrt(re*re+im*im); // absolute value
+         pOut[x] = s;
+     }
+
+     re = pIn[0];
+     pOut[0] = abs(re);
+     re = pIn[1];
+     pOut[cx] = abs(re);
 
 }

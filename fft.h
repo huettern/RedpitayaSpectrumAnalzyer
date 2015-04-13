@@ -22,6 +22,15 @@ public:
     void setRPif(RedpitayaInterface* ifc);
     void setPlot(QCustomPlot *plt);
 
+    // Data structure
+    typedef struct {
+        QVector<double> mag;
+        QVector<double> freq;
+        int width;
+        double binsize;
+    } tstdata;
+    tstdata data;
+
 private:
     QCustomPlot *plot;
     RedpitayaInterface *rpif;
@@ -30,17 +39,20 @@ private:
     int16_t* data_buf;
 
     int iNSamples;
-    int iFFTWidth;
+    int iFFTWidth;  ///< Width of the DFT, maximum number of points
+    int iPlotWidth; ///< Width of the Plot = iFFTWidth/2 + 1
 
     //plot data
     QVector<double> x_vector;
     QVector<double> y_vector;
 
+    QMutex mutex;
+
     void allocData();
     void freeData();
     void getRawData ();
     void plotData();
-
+    void publishData();
 
 signals:
 
