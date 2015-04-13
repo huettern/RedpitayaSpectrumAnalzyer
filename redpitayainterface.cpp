@@ -119,7 +119,7 @@ void RedpitayaInterface::Disconnect()
     if(rpState == RUNNING) stopStream();
 
     // send escape sequence
-    writeData("\x03");
+    writeData("\n\n\x03\n\n");
 
     /// unload kernel module
     writeData("\n\nrmmod rpad.ko\n");
