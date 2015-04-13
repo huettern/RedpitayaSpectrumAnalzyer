@@ -6,6 +6,9 @@
 
 QT       += core gui serialport
 
+# to supress error in MIAFFT library regarding templates
+QMAKE_CXXFLAGS += -fpermissive
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = SpectrumAnalyzer
