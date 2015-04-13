@@ -41,9 +41,21 @@ void ViewWidget::setRPif(RedpitayaInterface* ifc)
     rpif = ifc;
 }
 
+void ViewWidget::setSpectrumPlot(QCustomPlot *plt)
+{
+    spectrumPlot = plt;
+}
+
 void ViewWidget::on_rawplotClsoed()
 {
     qDebug() << "ViewWidget::on_rawplotClsoed()";
     rawplotOpen = false;
     delete rawplot;
+}
+
+void ViewWidget::on_autoscalePlot_clicked()
+{
+    qDebug() << "on_autoscalePlot_clicked";
+    spectrumPlot->rescaleAxes();
+    spectrumPlot->replot();
 }

@@ -18,10 +18,14 @@ MainWindow::MainWindow(QWidget *parent) :
             this, SLOT(setStatusBarMsg(QString,int)));
 
     //Setup FFT
-    m_fft = new FFT(this, m_ui->plot);
+    m_fft = new FFT(this);
+    m_fft->setRPif(m_rpif);
+    m_fft->setPlot(m_ui->plot);
+
 
     /*! Setup other widgets */
     m_ui->viewWidget->setRPif(m_rpif);
+    m_ui->viewWidget->setSpectrumPlot(m_ui->plot);
 }
 
 MainWindow::~MainWindow()
