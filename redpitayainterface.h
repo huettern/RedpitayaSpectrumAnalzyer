@@ -65,6 +65,8 @@ public:
     int rcvData ();
     int singleAcquisition();
 
+    double getSamplerate(void);
+
     // Data handling
     size_t getDataArray (void* dest, size_t n);
     size_t getDataArraySize ();

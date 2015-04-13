@@ -216,6 +216,15 @@ size_t RedpitayaInterface::getDataArraySize ()
     return numbytes;
 }
 
+/**
+ * @brief RedpitayaInterface::getSamplerate
+ * @return the sample rate of the current settings
+ */
+double RedpitayaInterface::getSamplerate(void)
+{
+    return (125000000 / rpStreamParams.decimation);
+}
+
 /****************************************************************************
  * PRIVATE SECTION
  -----------------------------------------------------------------------*//**
@@ -354,7 +363,6 @@ int RedpitayaInterface::rcvData ()
     close(sockfd);
 
     // done
-    //DataReady(data_buf);
     qDebug() << "rcv time = " << timer.elapsed();
     emit dataReady();
     return 0;
