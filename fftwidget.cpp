@@ -44,6 +44,13 @@ void FFTWidget::setRPif(RedpitayaInterface* ifc)
 }
 
 
+void FFTWidget::setFFTObj(FFT* obj)
+{
+    fft = obj;
+}
+
+
+
 void FFTWidget::calcEffectiveRate()
 {
     int inVal;
@@ -127,4 +134,6 @@ void FFTWidget::on_applyBtn_clicked()
 {
     rpif->setBlockSize(ui->BlockSizeBox->value());
     rpif->setDecimation(ui->decimationBox->text().toInt());
+    fft->setRefreshInterval(ui->RefreshRateBox->value());
+    fft->setNumZeroes(ui->zeroPadBox->value());
 }

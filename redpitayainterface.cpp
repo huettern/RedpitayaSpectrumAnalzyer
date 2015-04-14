@@ -94,7 +94,7 @@ int RedpitayaInterface::Connect(const char* ipadr, unsigned int port,
 
 
     // send escape sequence
-    writeData("\x03");
+    writeData("\n\r\x03");
     // load kernel module
     writeData("/opt/ddrdump/enableddrdump.sh\n");
     writeData("\n\nmonitor 0x40000030 0xff\n");
@@ -196,13 +196,11 @@ size_t RedpitayaInterface::getDataArray (void* dest, size_t n)
     if(n > numbytes)
     {
         memcpy(dest, publish_data_buf, numbytes);
-        qDebug() << "numbytes" << numbytes;
         return numbytes;
     }
     else
     {
         memcpy(dest, publish_data_buf, n*2);
-        qDebug() << "n" << n;
         return n;
     }
 }
@@ -310,7 +308,6 @@ void RedpitayaInterface::startServer()
     // Execute command, start server
     writeData(cmd);
     serial->flush();
-    qDebug() << cmd;
     rpState = RUNNING;
 }
 
@@ -334,8 +331,8 @@ void RedpitayaInterface::stopServer()
  */
 int RedpitayaInterface::rcvData ()
 {
-    QElapsedTimer timer;
-    timer.start();
+//    QElapsedTimer timer;
+//    timer.start();
 
     // get requested number of bytes
     numkbytes = rpStreamParams.numKBytes;
@@ -392,7 +389,6 @@ int RedpitayaInterface::rcvData ()
     close(sockfd);
 
     // done
-    qDebug() << "rcv time = " << timer.elapsed();
     emit dataReady();
     return 0;
 }

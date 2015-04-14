@@ -35,6 +35,9 @@ float             *flAmpSpec;   // spectrum
 FFT::FFT(QObject *parent) : QObject(parent)
 {
     runContConv = false;
+    FFTParams.nSamples = 0;
+    FFTParams.refreshRate = 1;
+    FFTParams.numZeroes = 0;
 }
 
 FFT::~FFT()
@@ -55,11 +58,15 @@ void FFT::singleConversion()
 {
     QElapsedTimer tim;
     tim.start();
+
     // Get Data
     getRawData();
 
-    iFFTWidth = iNSamples;
-    iPlotWidth = (iFFTWidth/2) + 1;
+    // Zero padding
+    zeroPadding();
+
+    // convert to float
+    convertDataToFloat();
 
     // Allocate memory for FFT
     allocData();
@@ -91,6 +98,20 @@ void FFT::setPlot(QCustomPlot *plt)
     plot = plt;
 }
 
+void FFT::setConConversionRunning (bool state)
+{
+    runContConv = state;
+}
+
+void FFT::setRefreshInterval(unsigned int interval)
+{
+    FFTParams.refreshRate = interval;
+}
+
+void FFT::setNumZeroes(unsigned int num)
+{
+    FFTParams.numZeroes = num;
+}
 
 /****************************************************************************
  * PUBLIC SLOTS SECTION
@@ -99,21 +120,22 @@ void FFT::setPlot(QCustomPlot *plt)
  ****************************************************************************/
 void FFT::do_continuousConversion()
 {
-
-//    while(true)
-//    {
-//        thread->usleep(1000000);
-
-//        mutex.lock();
-//        if(runContConv == true)
-//        {
-//            mutex.unlock();
-//            thread->usleep(1000000);
-
-
-//        }
-//        mutex.unlock();
-//    }
+    unsigned long timeUs = 0;
+    while(true)
+    {
+        thread->usleep(timeUs);
+        timeUs = 0;
+        mutex.lock();
+        if(runContConv == true)
+        {
+            qDebug() << "if(runContConv == true)";
+            timeUs = 1000000 / FFTParams.refreshRate;
+            mutex.unlock();
+            rpif->singleAcquisition();
+            singleConversion();
+        }
+        mutex.unlock();
+    }
 }
 
 /****************************************************************************
@@ -124,7 +146,6 @@ void FFT::do_continuousConversion()
 
 void FFT::allocData ()
 {
-    qDebug() << "Allocating with iFFTWidth = " << iFFTWidth;
     ip = (int*) malloc (sizeof(int)*2*iFFTWidth);
     if (ip == NULL) {fputs ("Memory error buf",stderr); exit (2);}
     w = (float*) malloc (sizeof(float)*2*iFFTWidth);
@@ -135,35 +156,99 @@ void FFT::allocData ()
 
 void FFT::freeData ()
 {
-    free(data_buf);
-    free(flData);
-    free(ip);
-    free(w);
-    free(flAmpSpec);
+    // TODO: Fails if zeropadding is enabled
+    free(data_buf);     data_buf = NULL;
+    free(flData);       flData = NULL;
+    free(ip);           ip = NULL;
+    free(w);            w = NULL;
+    free(flAmpSpec);    flAmpSpec = NULL;
     x_vector.clear();
     y_vector.clear();
 }
 
 void FFT::getRawData ()
 {
-    qDebug() << "on_dataChanged";
-    iNSamples = rpif->getDataArraySize();
+    size_t nSamples = rpif->getDataArraySize();
+    FFTParams.nSamples = nSamples;
 
     // allocate memory to hold the converted short values
-    data_buf = (int16_t*) malloc (sizeof(int16_t)*iNSamples);
+    data_buf = (int16_t*) malloc (sizeof(int16_t)*nSamples);
     if (data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
-    flData = (float*) malloc (sizeof(float)*iNSamples);
-    if (flData == NULL) {fputs ("Memory error buf",stderr); exit (2);}
 
     // Get data
-    rpif->getDataArray(data_buf, iNSamples);
+    rpif->getDataArray(data_buf, nSamples);
+}
+
+/**
+ * @brief FFT::zeroPadding
+ * Padds a given number of zeroes to the data array and rounds the
+ * size up to the next higher n^x data width
+ */
+void FFT::zeroPadding()
+{
+    size_t nsamples = FFTParams.nSamples;
+    unsigned int nzeroes = FFTParams.numZeroes;
+    int16_t *buf;
+
+    // if no zeropadding needed, exit here
+    iFFTWidth = FFTParams.nSamples;
+    iPlotWidth = (iFFTWidth/2) + 1;
+    if(nzeroes == 0) return;
+
+    // calculate new FFT width
+    iFFTWidth = nsamples + nzeroes;
+    unsigned int exp;
+    for(exp = 1; (pow(2, exp) < iFFTWidth) && exp; exp++);
+
+    // check for buffer overflow (this should really NEVER happen)
+    if(exp == 0) while(1) qDebug() << "FATAL";
+
+    iFFTWidth = pow(2, exp);
+    iPlotWidth = (iFFTWidth/2) + 1;
+
+    // alloc new data
+    buf = (int16_t*)malloc(sizeof(int16_t)*iFFTWidth);
+    if (buf == NULL) {fputs ("Memory error buf",stderr); exit(2);}
+
+    // copy new data
+    memset(buf, 0, sizeof(int16_t)*iFFTWidth);
+    memcpy(buf, data_buf, sizeof(int16_t)*nsamples);
+    free(data_buf);
+    data_buf = buf;
+    free(buf);
+    // done
+    qDebug() << "\nnsamples:              " << nsamples
+             << "\nnzeroes:               " << nzeroes
+             << "\niFFTWidth:             " << iFFTWidth
+             << "\ndata_buf[0]            " << data_buf[0]
+             << "\nbuf[0]                 " << buf[0]
+             << "\ndata_buf[1]            " << data_buf[1]
+             << "\nbuf[1]                 " << buf[1]
+             << "\ndata_buf[nsamples-1]   " << data_buf[nsamples-1]
+             << "\nbuf[nsamples-1]        " << buf[nsamples-1]
+             << "\ndata_buf[nsamples]     " << data_buf[nsamples]
+             << "\nbuf[nsamples]          " << buf[nsamples]
+             << "\nbuf[iFFTWidth-1]       " << buf[iFFTWidth-1] ;
+
+}
+
+/**
+ * @brief FFT::convertDataToFloat
+ * convert to float and calculate voltage
+ */
+void FFT::convertDataToFloat()
+{
+    flData = (float*) malloc (sizeof(float)*iFFTWidth);
+    if (flData == NULL) {fputs ("Memory error buf",stderr); exit (2);}
 
     //convert to float
-    for(int i = 0; i < iNSamples; i++)
+    for(int i = 0; i < iFFTWidth; i++)
     {
+        // convert to float and calculate voltage
         flData[i] = ((float)data_buf[i])/30678;
     }
 }
+
 
 void FFT::plotData()
 {
@@ -207,6 +292,103 @@ void FFT::publishData()
  -----------------------------------------------------------------------*//**
  * @MIAFFT
  ****************************************************************************/
+// ****************************************************************************************
+// Fast Fourier Transform
+//    dimension   :two
+//    data length :power of 2
+// functions
+//    fMIA_FFT2D: Real Discrete Fourier Transform
+
+
+// -------- Real DFT / Inverse of Real DFT --------
+//    [definition]
+//        <case1> FFT
+//            R[k1,k2] = sum_j1=0^iHeight-1 sum_j2=0^iWidth-1 pa[j1,j2] *
+//                            cos(2*pai*j1*k1/iHeight + 2*pai*j2*k2/iWidth),
+//                            0<=k1<iHeight, 0<=k2<iWidth
+//            I[k1,k2] = sum_j1=0^iHeight-1 sum_j2=0^iWidth-1 pa[j1,j2] *
+//                            sin(2*pai*j1*k1/iHeight + 2*pai*j2*k2/iWidth),
+//                            0<=k1<iHeight, 0<=k2<iWidth
+//        <case2>INVERS FFT (excluding scale)
+//            pa[k1,k2] = (1/2) * sum_j1=0^iHeight-1 sum_j2=0^iWidth-1
+//                            (R[j1,j2] *
+//                            cos(2*pai*j1*k1/iHeight + 2*pai*j2*k2/iWidth) +
+//                            I[j1,j2] *
+//                            sin(2*pai*j1*k1/iHeight + 2*pai*j2*k2/iWidth)),
+//                            0<=k1<iHeight, 0<=k2<iWidth
+//        (notes: R[iHeight-k1, iWidth-k2] = R[k1,k2],
+//                I[iHeight-k1, iWidth-k2] = -I[k1,k2],
+//                R[iHeight-k1,0] = R[k1,0],
+//                I[iHeight-k1,0] = -I[k1,0],
+//                R[0, iWidth-k2] = R[0,k2],
+//                I[0, iWidth-k2] = -I[0,k2],
+//                0<k1<iHeight, 0<k2<iWidth)
+//    [usage]
+//        <case1>
+//            iWsp[0] = 0; // first time only
+//            rdft2d(iHeight, iWidth, 1, a, iWsp, w);
+//        <case2>
+//            iWsp[0] = 0; // first time only
+//            rdft2d(iHeight, iWidth, -1, a, iWsp, w);
+//    [parameters]
+//        iHeight    :data length (int)   iHeight >= 2, iHeight = power of 2
+//        iWidth     :data length (int)    iWidth >= 2, iWidth = power of 2
+//        pa[0...iHeight-1,0...iWidth-1]
+//               :input/output data (T1_ **)
+//                <case1>
+//                    output data
+//                        pa[k1,2*k2] = R[k1,k2] = R[iHeight-k1, iWidth-k2],
+//                        pa[k1,2*k2+1] = I[k1,k2] = -I[iHeight-k1, iWidth-k2],
+//                            0<k1<iHeight, 0<k2<iWidth/2,
+//                        pa[0,2*k2] = R[0,k2] = R[0, iWidth-k2],
+//                        pa[0,2*k2+1] = I[0,k2] = -I[0, iWidth-k2],
+//                            0<k2<iWidth/2,
+//                        pa[k1,0] = R[k1,0] = R[iHeight-k1,0],
+//                        pa[k1,1] = I[k1,0] = -I[iHeight-k1,0],
+//                        pa[iHeight-k1,1] = R[k1, iWidth/2] = R[iHeight-k1, iWidth/2],
+//                        pa[iHeight-k1,0] = -I[k1, iWidth/2] = I[iHeight-k1, iWidth/2],
+//                            0<k1<iHeight/2,
+//                        pa[0,0] = R[0,0],
+//                        pa[0,1] = R[0, iWidth/2],
+//                        pa[iHeight/2,0] = R[iHeight/2,0],
+//                        pa[iHeight/2,1] = R[iHeight/2, iWidth/2]
+//                <case2>
+//                    input data
+//                        pa[j1,2*j2] = R[j1,j2] = R[iHeight-j1, iWidth-j2],
+//                        pa[j1,2*j2+1] = I[j1,j2] = -I[iHeight-j1, iWidth-j2],
+//                            0<j1<iHeight, 0<j2<iWidth/2,
+//                        pa[0,2*j2] = R[0,j2] = R[0, iWidth-j2],
+//                        pa[0,2*j2+1] = I[0,j2] = -I[0, iWidth-j2],
+//                            0<j2<iWidth/2,
+//                        pa[j1,0] = R[j1,0] = R[iHeight-j1,0],
+//                        pa[j1,1] = I[j1,0] = -I[iHeight-j1,0],
+//                        pa[iHeight-j1,1] = R[j1, iWidth/2] = R[iHeight-j1, iWidth/2],
+//                        pa[iHeight-j1,0] = -I[j1, iWidth/2] = I[iHeight-j1, iWidth/2],
+//                            0<j1<iHeight/2,
+//                        pa[0,0] = R[0,0],
+//                        pa[0,1] = R[0, iWidth/2],
+//                        pa[iHeight/2,0] = R[iHeight/2,0],
+//                        pa[iHeight/2,1] = R[iHeight/2, iWidth/2]
+//        iWsp[0...*]
+//               :work area for bit reversal (int *)
+//                length of iWsp >= 2+sqrt(n)
+//                (n = max(iHeight, iWidth/2))
+//                iWsp[0], iWsp[1] are pointers of the cos/sin table.
+//        Wsp[0...*]
+//               :cos/sin table
+//                length of Wsp >= max(iHeight/2, iWidth/4) + iWidth/4
+//               Wsp[], iWsp[] are initialized if iWsp[0] == 0.
+//    [remark]
+//        Inverse of
+//            rdft2d(iHeight, iWidth, 1, a, iWsp, w);
+//        is
+//            rdft2d(iHeight, iWidth, -1, a, iWsp, w);
+//            for (j1 = 0; j1 <= iHeight - 1; j1++) {
+//                for (j2 = 0; j2 <= iWidth - 1; j2++) {
+//                    pa[j1,j2] *= 2.0 / (iHeight * iWidth);
+//                }
+//            }
+//  ****************************************************************************************
 
 /****************************************************************************
  * HELPER FUNCTIONS

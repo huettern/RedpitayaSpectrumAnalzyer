@@ -75,7 +75,6 @@ PlotView::PlotView(QWidget *parent) :
 
 PlotView::~PlotView()
 {
-    qDebug() << "PlotView::~PlotView()";
     delete ui;
 }
 
@@ -93,7 +92,6 @@ void PlotView::on_quitButton_clicked()
 void PlotView::on_dataChanged()
 {
     size_t n;
-    qDebug() << "on_dataChanged";
     size_t numbytes = rpif->getDataArraySize();
 
     // allocate memory to hold the converted short values

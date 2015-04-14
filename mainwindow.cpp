@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui->viewWidget->setSpectrumPlot(m_ui->plot);
 
     m_ui->fftwidget->setRPif(m_rpif);
+    m_ui->fftwidget->setFFTObj(m_fft);
 }
 
 MainWindow::~MainWindow()
@@ -61,10 +62,12 @@ void MainWindow::setStatusBarMsg (QString str, int time)
 
 void MainWindow::on_RUNButton_clicked()
 {
+    m_fft->setConConversionRunning(true);
 }
 
 void MainWindow::on_STOPButton_clicked()
 {
+    m_fft->setConConversionRunning(false);
 }
 
 void MainWindow::on_SINGLEButton_clicked()

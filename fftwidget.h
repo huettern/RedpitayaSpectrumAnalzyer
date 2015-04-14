@@ -3,8 +3,10 @@
 
 #include <QWidget>
 #include "redpitayainterface.h"
+#include "fft.h"
 
 class RedpitayaInterface;
+class FFT;
 
 namespace Ui {
 class FFTWidget;
@@ -19,6 +21,7 @@ public:
     ~FFTWidget();
 
     void setRPif(RedpitayaInterface* ifc);
+    void setFFTObj(FFT* obj);
 
 private slots:
     void on_SampleMButton_toggled(bool checked);
@@ -34,8 +37,9 @@ private slots:
     void on_applyBtn_clicked();
 
 private:
-    Ui::FFTWidget *ui;
-    RedpitayaInterface *rpif;
+    Ui::FFTWidget       *ui;
+    RedpitayaInterface  *rpif;
+    FFT                 *fft;
 
     void calcEffectiveRate ();
 
