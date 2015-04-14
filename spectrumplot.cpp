@@ -13,12 +13,20 @@ SpectrumPlot::SpectrumPlot(QObject *parent, QCustomPlot *qcplot) : QObject(paren
     //m_plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(Qt::white), 5));
 
     // give the axes some labels:
-    m_plot->xAxis->setLabel("x");
-    m_plot->yAxis->setLabel("y");
+    m_plot->xAxis->setLabel("Frequency [Hz]");
+    m_plot->yAxis->setLabel("Magnitude [Vp]");
+    m_plot->xAxis->setLabelColor(QColor(Qt::white));
+    m_plot->xAxis->setLabelFont(QFont("Arial", 20, 1, false));
+    m_plot->yAxis->setLabelColor(QColor(Qt::white));
+    m_plot->yAxis->setLabelFont(QFont("Arial", 20, 1, false));
     // set axes ranges, so we see all data:
     m_plot->xAxis->setRange(-1, 1);
     m_plot->yAxis->setRange(0, 1);
 
+    // set axis to logarithmic base
+    m_plot->xAxis->setScaleType(QCPAxis::stLogarithmic);
+    m_plot->xAxis->setNumberFormat("ebc");
+    m_plot->xAxis->setNumberPrecision(3);
     // allow interactions, drag and zoom
     m_plot->setInteraction(QCP::iRangeDrag, true);
     m_plot->setInteraction(QCP::iRangeZoom, true);

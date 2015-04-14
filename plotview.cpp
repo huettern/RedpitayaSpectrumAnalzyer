@@ -23,8 +23,13 @@ PlotView::PlotView(QWidget *parent) :
     //ui->plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(Qt::white), 5));
 
     // give the axes some labels:
-    ui->plot->xAxis->setLabel("x");
-    ui->plot->yAxis->setLabel("y");
+    ui->plot->xAxis->setLabel("Sample No");
+    ui->plot->yAxis->setLabel("Voltage [V]");
+    ui->plot->xAxis->setLabelColor(QColor(Qt::white));
+    ui->plot->xAxis->setLabelFont(QFont("Arial", 20, 1, false));
+    ui->plot->yAxis->setLabelColor(QColor(Qt::white));
+    ui->plot->yAxis->setLabelFont(QFont("Arial", 20, 1, false));
+
     // set axes ranges, so we see all data:
     ui->plot->xAxis->setRange(-1, 1);
     ui->plot->yAxis->setRange(0, 1);
