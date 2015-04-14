@@ -40,6 +40,8 @@ RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
     rpStreamParams.reportRate = false;
     rpStreamParams.port = 1234;
     serial = new QSerialPort(this);
+
+    publish_data_buf = NULL;
 }
 
 RedpitayaInterface::~RedpitayaInterface()
@@ -183,7 +185,7 @@ int RedpitayaInterface::stopStream ()
  * @brief RedpitayaInterface::getDataArray
  * @param dest Pointer to a int16_t array
  * @param n number of elements to copy
- * @return effective copied data
+ * @return num real copied data
  *
  * Copies the most recent Data to the destination
  */
@@ -193,13 +195,13 @@ size_t RedpitayaInterface::getDataArray (void* dest, size_t n)
     // TODO: verify this routine
     if(n > numbytes)
     {
-        memcpy(dest, data_buf, numbytes);
+        memcpy(dest, publish_data_buf, numbytes);
         qDebug() << "numbytes" << numbytes;
         return numbytes;
     }
     else
     {
-        memcpy(dest, data_buf, n*2);
+        memcpy(dest, publish_data_buf, n*2);
         qDebug() << "n" << n;
         return n;
     }
@@ -223,6 +225,26 @@ size_t RedpitayaInterface::getDataArraySize ()
 double RedpitayaInterface::getSamplerate(void)
 {
     return (125000000 / rpStreamParams.decimation);
+}
+
+/**
+ * @brief RedpitayaInterface::setDecimation
+ * @param dec
+ * Set new decimation value
+ */
+void RedpitayaInterface::setDecimation(unsigned int dec)
+{
+    rpStreamParams.decimation = dec;
+}
+
+/**
+ * @brief RedpitayaInterface::setBlockSize
+ * @param numkbytes
+ * set new number of samples to conduct
+ */
+void RedpitayaInterface::setBlockSize(unsigned int numkbytes)
+{
+    rpStreamParams.numKBytes = numkbytes;
 }
 
 /****************************************************************************
@@ -263,12 +285,14 @@ void RedpitayaInterface::startServer()
     writeData("\n\nmonitor 0x40000030 0xF0\n");
 
     // Create command from Parameter structure
+    mutex.lock();
     QString cmd_base = "/opt/ddrdump/preview/preview_rp_remote_acquire ";
     QString port = QString().sprintf("-p %d ", rpStreamParams.port);
     QString mode = QString().sprintf("-m 2 ");
     QString chan = QString().sprintf("-c %d ", rpStreamParams.channel);
     QString dec  = QString().sprintf("-d %d ", rpStreamParams.decimation);
     QString num  = QString().sprintf("-k %d ", rpStreamParams.numKBytes);
+    mutex.unlock();
 
     rpStreamParams.reportRate = true;
 
@@ -357,7 +381,12 @@ int RedpitayaInterface::rcvData ()
     n_packets = recv(sockfd, data_buf, 2*numbytes, MSG_WAITALL);
     //printf("n=%d numbytes=%d\n", n_packets, numbytes);
 
-    qDebug() << "n=" << n_packets << "numbytes req" << numbytes;
+    //! Publish Data
+    free(publish_data_buf);
+    publish_data_buf = (int16_t*) malloc (2*numbytes);
+    if (publish_data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+    memcpy(publish_data_buf, data_buf, 2*numbytes);
+    publish_data_buf_params = rpStreamParams;
 
     // Close TCP socket
     close(sockfd);

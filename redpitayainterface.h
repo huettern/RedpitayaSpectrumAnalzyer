@@ -71,6 +71,10 @@ public:
     size_t getDataArray (void* dest, size_t n);
     size_t getDataArraySize ();
 
+    // Settings Handling
+    void setDecimation(unsigned int dec);
+    void setBlockSize(unsigned int numkbytes);
+
 signals:
     void setStatusMsg (QString, int);
     void dataReady();
@@ -85,6 +89,10 @@ private:
     //Output Buffer
     int16_t* data_buf;
     size_t numkbytes, numbytes;
+
+    // Published Data
+    tsRPStreamParams publish_data_buf_params;
+    int16_t* publish_data_buf;
 
     // Data for ethernet socket
     int sockfd;

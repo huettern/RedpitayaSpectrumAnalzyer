@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QThread>
 
 #include "spectrumplot.h"
 #include "redpitayainterface.h"
@@ -36,6 +37,7 @@ private:
     SpectrumPlot         *m_plot;
     RedpitayaInterface   *m_rpif;
     FFT                  *m_fft;
+    QThread              *m_fft_thread;
 
 };
 

@@ -2,6 +2,9 @@
 #define FFT_H
 
 #include <QObject>
+#include <QThread>
+
+
 #include "qcustomplot.h"
 #include "redpitayainterface.h"
 
@@ -18,6 +21,8 @@ public:
     explicit FFT(QObject *parent = 0);
     ~FFT();
 
+    void setThread (QThread *thr);
+
     void singleConversion();
     void setRPif(RedpitayaInterface* ifc);
     void setPlot(QCustomPlot *plt);
@@ -30,6 +35,11 @@ public:
         double binsize;
     } tstdata;
     tstdata data;
+
+    // FFT Settings Structure
+    typedef struct {
+
+    } tstFFTSettings;
 
 private:
     QCustomPlot *plot;
@@ -46,7 +56,9 @@ private:
     QVector<double> x_vector;
     QVector<double> y_vector;
 
+    QThread *thread;
     QMutex mutex;
+    bool runContConv;
 
     void allocData();
     void freeData();
@@ -59,6 +71,7 @@ signals:
 
 
 public slots:
+    void do_continuousConversion();
 
 
 };

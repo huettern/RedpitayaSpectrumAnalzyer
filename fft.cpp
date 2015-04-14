@@ -3,8 +3,6 @@
 #include <math.h>
 #include <qdebug.h>
 
-
-
 //  **************************************************************************
 //  DEFINES
 //  **************************************************************************
@@ -36,10 +34,16 @@ float             *flAmpSpec;   // spectrum
  ****************************************************************************/
 FFT::FFT(QObject *parent) : QObject(parent)
 {
+    runContConv = false;
 }
 
 FFT::~FFT()
 {
+}
+
+void FFT::setThread (QThread *thr)
+{
+    connect(thr, SIGNAL(started()), this, SLOT(do_continuousConversion()));
 }
 
 /**
@@ -87,6 +91,30 @@ void FFT::setPlot(QCustomPlot *plt)
     plot = plt;
 }
 
+
+/****************************************************************************
+ * PUBLIC SLOTS SECTION
+ -----------------------------------------------------------------------*//**
+ * @publicslotssection
+ ****************************************************************************/
+void FFT::do_continuousConversion()
+{
+
+//    while(true)
+//    {
+//        thread->usleep(1000000);
+
+//        mutex.lock();
+//        if(runContConv == true)
+//        {
+//            mutex.unlock();
+//            thread->usleep(1000000);
+
+
+//        }
+//        mutex.unlock();
+//    }
+}
 
 /****************************************************************************
  * PRIATE SECTION
