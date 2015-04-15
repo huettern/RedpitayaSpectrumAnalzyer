@@ -111,8 +111,9 @@ private:
     ConsoleWindow* m_console;
 
     // Private methods
-    void startServer();
-    void stopServer();
+    int     checkCOM();
+    int     startServer();
+    int     stopServer();
 
     // Data
     enRpState           rpState;

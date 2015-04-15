@@ -54,7 +54,7 @@ void FFT::setThread (QThread *thr)
  *
  * Calculates the FFT of a single set of Data
  */
-void FFT::singleConversion()
+int FFT::singleConversion()
 {
     QElapsedTimer tim;
     tim.start();
@@ -85,6 +85,7 @@ void FFT::singleConversion()
     // clean up
     freeData();
     qDebug() << "FFT time" << tim.nsecsElapsed();
+    return 0;
 }
 
 
@@ -131,8 +132,12 @@ void FFT::do_continuousConversion()
             qDebug() << "if(runContConv == true)";
             timeUs = 1000000 / FFTParams.refreshRate;
             mutex.unlock();
-            rpif->singleAcquisition();
-            singleConversion();
+            // Do acq and fft
+            if(rpif->singleAcquisition()) stopContConv();
+            else if (singleConversion())  stopContConv();
+            //rpif->singleAcquisition();
+            //singleConversion();
+            qDebug() << "singleConversion done";
         }
         mutex.unlock();
     }
@@ -286,6 +291,14 @@ void FFT::publishData()
 
     mutex.unlock();
 }
+
+void FFT::stopContConv()
+{
+    runContConv = false;
+    emit setStatusMsg("Continuous Conversion interrupted", 0);
+}
+
+
 
 /****************************************************************************
  * MIAFFT SECTION

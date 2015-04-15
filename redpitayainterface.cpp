@@ -71,23 +71,29 @@ int RedpitayaInterface::Connect(const char* ipadr, unsigned int port,
     serial->setParity(QSerialPort::NoParity);
     serial->setStopBits(QSerialPort::OneStop);
     serial->setFlowControl(QSerialPort::NoFlowControl);
-
+    serial->clearError();
     // try to open port
     int i = 0;
     for(i = 0; i < 5; i++)
     {
-        qDebug() << "\nAttemt " << i;
-        if (serial->open(QIODevice::ReadWrite) != 0)
+        qDebug() << "\nAttemt " << i+1;
+        if (serial->open(QIODevice::ReadWrite) == true)
         {
-            qDebug() << "\n Error : Could not open Serial port:";
-            qDebug() << " " << errno << strerror(errno);
-            qDebug() << " COM" << COM;
+            qDebug() << "\n Port is open :)";
+            break;
         }
         else
-            break;
+        {
+            QSerialPort::SerialPortError err = serial->error();
+            qDebug() << "\n Error : Could not open Serial port:";
+            qDebug() << " errno: " << errno << strerror(errno);
+            qDebug() << " err: " << err << strerror(err);
+            qDebug() << " COM" << COM;
+        }
     }
     if(i >= 5)
     {
+        qDebug() << " Err: (i >= 5)" << COM;
         this->Disconnect();
         return errno;
     }
@@ -146,17 +152,21 @@ void RedpitayaInterface::Disconnect()
  */
 int RedpitayaInterface::singleAcquisition()
 {
-    startServer();
+    if(startServer())   return -1;
+
     ///<! Give the server time to start
     Helper::msleep(30);
-    rcvData();
-    stopServer();
+    if(rcvData())       return -1;
+
+    //check status
+    if(stopServer())    return -1;
+
     return 0;
 }
 
 /**
  * @brief RedpitayaInterface::startStream
- * @return Status
+ * @return StatuscheckCOM
  *
  * Starts the data stream from Redpitaya to PC
  */
@@ -273,12 +283,31 @@ void RedpitayaInterface::writeData(QString str)
 }
 
 /**
+ * @brief RedpitayaInterface::checkCOM
+ * @return 0 if ok, -1 if not connected
+ * Checks if the serial communication is still running
+ */
+int RedpitayaInterface::checkCOM()
+{
+    if( serial->isOpen() == false )
+    {
+        rpState = DISCONNECTED;
+        qDebug() << " checkCOM failed!";
+        return -1;
+    }
+    return 0;
+}
+
+/**
  * @brief RedpitayaInterface::startServer
- *
+ * @return 0 if ok, -1 if not
  * Starts the sampling and transmission server
  */
-void RedpitayaInterface::startServer()
+int RedpitayaInterface::startServer()
 {
+    // check if com is still up
+    if(checkCOM()) return -1;
+
     // set leds
     writeData("\n\nmonitor 0x40000030 0xF0\n");
 
@@ -309,6 +338,7 @@ void RedpitayaInterface::startServer()
     writeData(cmd);
     serial->flush();
     rpState = RUNNING;
+    return 0;
 }
 
 /**
@@ -316,12 +346,17 @@ void RedpitayaInterface::startServer()
  *
  * Stops the sampling and transmission server
  */
-void RedpitayaInterface::stopServer()
+int RedpitayaInterface::stopServer()
 {
+    // check if com is still up
+    if(checkCOM()) return -1;
+
     // send escape sequence
     writeData("\x03");
     writeData("\n\nmonitor 0x40000030 0x0f\n");
     rpState = CONNECTED;
+
+    return 0;
 }
 
 /**
@@ -365,7 +400,7 @@ int RedpitayaInterface::rcvData ()
            qDebug() << "\n Error : Connect Failed";
            qDebug() << " Err: " << errno << strerror(errno);
            qDebug() << "\n Sockfd=" << sockfd;
-           //return 1;
+           return errno;
         }
         else
         {

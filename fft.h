@@ -23,7 +23,7 @@ public:
 
     void setThread (QThread *thr);
 
-    void singleConversion();
+    int singleConversion();
     void setRPif(RedpitayaInterface* ifc);
     void setPlot(QCustomPlot *plt);
 
@@ -76,8 +76,10 @@ private:
     void convertDataToFloat();
     void plotData();
     void publishData();
+    void stopContConv();
 
 signals:
+    void setStatusMsg (QString, int);
 
 
 
