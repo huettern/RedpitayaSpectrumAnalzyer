@@ -8,6 +8,9 @@
 #include "qcustomplot.h"
 #include "redpitayainterface.h"
 
+/*! Maximum number of points of the FFT. This is used to allocate memory */
+#define     MAXIMUM_FFT_POINTS                      1*1024*1024
+
 
 class QCustomPlot;
 class RedpitayaInterface;
@@ -31,6 +34,11 @@ public:
     void setRefreshInterval(unsigned int interval);
     void setNumZeroes(unsigned int num);
 
+    size_t getVectorSize();
+
+    void FFT::getDataLock(QVector<double> *x, QVector<double> *y);
+    void getDataUnlock();
+
     // Data structure
     typedef struct {
         QVector<double> mag;
@@ -39,6 +47,15 @@ public:
         double binsize;
     } tstdata;
     tstdata data;
+
+    // Shared Memory Data structure
+    typedef struct {
+        double samplerate;
+        unsigned int fftwidth;
+        unsigned int plotwidth;
+        float data[(MAXIMUM_FFT_POINTS/2)+1];
+    } tstPublData;
+    //tstPublData stPublicData;
 
     // FFT Settings Structure
     typedef struct {
@@ -51,8 +68,8 @@ public:
     } tstFFTParams;
 
 private:
-    QCustomPlot *plot;
-    RedpitayaInterface *rpif;
+    QCustomPlot         *plot;
+    RedpitayaInterface  *rpif;
 
     // Data buffer
     int16_t* data_buf;
@@ -62,6 +79,7 @@ private:
     int iPlotWidth; ///< Width of the Plot = iFFTWidth/2 + 1
 
     //plot data
+    QSharedMemory sharedDataMemory;
     QVector<double> x_vector;
     QVector<double> y_vector;
 
@@ -80,6 +98,7 @@ private:
 
 signals:
     void setStatusMsg (QString, int);
+    void dataReady();
 
 
 

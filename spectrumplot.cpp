@@ -1,6 +1,17 @@
 #include "spectrumplot.h"
 
-SpectrumPlot::SpectrumPlot(QObject *parent, QCustomPlot *qcplot) : QObject(parent)
+#include <QDebug>
+
+SpectrumPlot::SpectrumPlot(QObject *parent) : QObject(parent)
+{
+}
+
+SpectrumPlot::~SpectrumPlot()
+{
+
+}
+
+void SpectrumPlot::setPlot(QCustomPlot *qcplot)
 {
     // save plot handle
     m_plot = qcplot;
@@ -8,7 +19,6 @@ SpectrumPlot::SpectrumPlot(QObject *parent, QCustomPlot *qcplot) : QObject(paren
     // Set design parameter
     // create graph and assign data to it:
     m_plot->addGraph();
-    //m_plot->graph(0)->setData(x, y);
     m_plot->graph(0)->setPen(QPen(QColor(0x99, 0xff, 0x33, 160), 1));
     //m_plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black, 1.5), QBrush(Qt::white), 5));
 
@@ -65,11 +75,71 @@ SpectrumPlot::SpectrumPlot(QObject *parent, QCustomPlot *qcplot) : QObject(paren
     axisRectGradient.setColorAt(1, QColor(30, 30, 30));
     m_plot->axisRect()->setBackground(axisRectGradient);
 
-    m_plot->replot();
 }
 
-SpectrumPlot::~SpectrumPlot()
+void SpectrumPlot::setFFT(FFT *fft)
 {
+    m_fft = fft;
+}
 
+void SpectrumPlot::attachSharedMemory(QString key)
+{
+    sharedDataMemory.setKey(key);
+    sharedDataMemory.attach(QSharedMemory::ReadOnly);
+
+}
+
+void SpectrumPlot::on_dataReady()
+{
+    unsigned int fftwidth, plotwidth;
+
+    FFT::tstPublData *pubdat;
+    //try to lock the shared memory
+//    if(sharedDataMemory.lock() == false)
+//    {
+//        qDebug() << "Could not lock shared memory for read";
+//    }
+//    else
+//    {
+//        pubdat = (FFT::tstPublData*)sharedDataMemory.data();
+//        fftwidth = pubdat->fftwidth;
+//        plotwidth = pubdat->plotwidth;
+//        x_vector.resize(plotwidth);
+//        y_vector.resize(plotwidth);
+
+//        for(unsigned int i = 0; i < plotwidth; i++)
+//        {
+//            y_vector[i] = (double)pubdat->data[i] / fftwidth;
+//            x_vector[i] = i*(pubdat->samplerate/fftwidth);
+//        }
+
+//        sharedDataMemory.unlock();
+//    }
+
+
+    //QVector<double> *x,*y;
+//    QVector<double> nx;
+//    QVector<double> ny;
+
+//    nx = QVector<double>(m_fft->getVectorSize());
+//    ny = QVector<double>(m_fft->getVectorSize());
+
+//    m_fft->getDataLock(&nx,&ny);
+    //m_fft->getDataLock(x,y);
+        qDebug() << "x0= " << m_fft->data.freq.size()
+                 << "x1= " << m_fft->data.freq[1]
+                 << "x2= " << m_fft->data.freq[2]
+                 << "y0= " << m_fft->data.mag[0]
+                 << "y1= " << m_fft->data.mag[1]
+                 << "y2= " << m_fft->data.mag[2]
+                 << "y3= " << m_fft->data.mag[3];
+    m_plot->graph(0)->setData(m_fft->data.freq, m_fft->data.mag);
+    m_plot->replot();
+
+//     qDebug() << "x size= " << nx.size();
+
+
+
+//    m_fft->getDataUnlock();
 }
 

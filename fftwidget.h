@@ -50,6 +50,7 @@ private:
         unsigned int sampleRate;
         unsigned int effectiveRate;
         unsigned int blockSize;
+        unsigned int zeroPads;
     } tstParams;
     QVector<tstParams> *params;
 };

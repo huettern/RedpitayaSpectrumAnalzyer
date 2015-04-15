@@ -38,10 +38,17 @@ FFT::FFT(QObject *parent) : QObject(parent)
     FFTParams.nSamples = 0;
     FFTParams.refreshRate = 1;
     FFTParams.numZeroes = 0;
+    sharedDataMemory.setKey("SharedDataMemory");
+    allocData();
 }
 
 FFT::~FFT()
 {
+    free(ip);           ip = NULL;
+    free(w);            w = NULL;
+    free(flAmpSpec);    flAmpSpec = NULL;
+    free(flData);       flData = NULL;
+    free(data_buf);     data_buf = NULL;
 }
 
 void FFT::setThread (QThread *thr)
@@ -68,9 +75,6 @@ int FFT::singleConversion()
     // convert to float
     convertDataToFloat();
 
-    // Allocate memory for FFT
-    allocData();
-
     // Calculate Data
     ip[0] = 0;
     fMIA_FFT1D(iFFTWidth, flData, 1 , ip, w); // Fourier Transforamtion
@@ -81,9 +85,10 @@ int FFT::singleConversion()
 
     // Publish Data
     publishData();
+    emit dataReady();
 
     // clean up
-    freeData();
+    //freeData();
     qDebug() << "FFT time" << tim.nsecsElapsed();
     return 0;
 }
@@ -112,6 +117,51 @@ void FFT::setRefreshInterval(unsigned int interval)
 void FFT::setNumZeroes(unsigned int num)
 {
     FFTParams.numZeroes = num;
+}
+
+size_t FFT::getVectorSize()
+{
+    return qMax(y_vector.size(), x_vector.size());
+}
+
+/**
+ * @brief FFT::setDataLock
+ * @param x
+ * @param y
+ * Locks the mutex and copies the pointers to the x and y data
+ * from the FFT plot to the given destination.
+ *
+ * @attention After reading from those pointers, mutex MUST be
+ * unlocked using FFT::setDataUnlock
+ */
+void FFT::getDataLock(QVector<double> *x, QVector<double> *y)
+{
+    QMutex mutex2;
+    mutex2.lock();
+
+    qDebug() << "x_vector size= " << x_vector.size();
+
+
+    x->resize(x_vector.size());
+    y->resize(y_vector.size());
+
+
+
+    memcpy(x, &x_vector, sizeof (x_vector));
+    memcpy(y, &y_vector, sizeof (y_vector));
+
+mutex2.unlock();
+    //x = &x_vector;
+    //y = &y_vector;
+}
+
+/**
+ * @brief FFT::setDataUnlock
+ * Unlocks the mutex from FFT::setDataLock
+ */
+void FFT::getDataUnlock()
+{
+    mutex.unlock();
 }
 
 /****************************************************************************
@@ -151,22 +201,26 @@ void FFT::do_continuousConversion()
 
 void FFT::allocData ()
 {
-    ip = (int*) malloc (sizeof(int)*2*iFFTWidth);
+    bool retval;
+    data_buf = (int16_t*) malloc (sizeof(int16_t)*MAXIMUM_FFT_POINTS);
+    if (data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+    ip = (int*) malloc (sizeof(int)*2*MAXIMUM_FFT_POINTS);
     if (ip == NULL) {fputs ("Memory error buf",stderr); exit (2);}
-    w = (float*) malloc (sizeof(float)*2*iFFTWidth);
+    w = (float*) malloc (sizeof(float)*2*MAXIMUM_FFT_POINTS);
     if (w == NULL) {fputs ("Memory error buf",stderr); exit (2);}
-    flAmpSpec = (float*) malloc (sizeof(float)*2*iFFTWidth);
+    flAmpSpec = (float*) malloc (sizeof(float)*2*MAXIMUM_FFT_POINTS);
     if (flAmpSpec == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+    flData = (float*) malloc (sizeof(float)*MAXIMUM_FFT_POINTS);
+    if (flData == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+
+//    retval = sharedDataMemory.create(sizeof(tstPublData), QSharedMemory::ReadWrite);
+//    if(retval == false) {fputs ("sharedDataMemory error",stderr);
+//    qDebug() << sharedDataMemory.error();exit (2);}
 }
 
 void FFT::freeData ()
 {
     // TODO: Fails if zeropadding is enabled
-    free(data_buf);     data_buf = NULL;
-    free(flData);       flData = NULL;
-    free(ip);           ip = NULL;
-    free(w);            w = NULL;
-    free(flAmpSpec);    flAmpSpec = NULL;
     x_vector.clear();
     y_vector.clear();
 }
@@ -176,9 +230,14 @@ void FFT::getRawData ()
     size_t nSamples = rpif->getDataArraySize();
     FFTParams.nSamples = nSamples;
 
-    // allocate memory to hold the converted short values
-    data_buf = (int16_t*) malloc (sizeof(int16_t)*nSamples);
-    if (data_buf == NULL) {fputs ("Memory error buf",stderr); exit (2);}
+    // Limit to max size
+    if(nSamples > MAXIMUM_FFT_POINTS)
+    {
+        qDebug() << " ------>> FATAL: nSamples LIMITED"
+                 << "nSamples=" <<nSamples
+                 << "MAXIMUM_FFT_POINTS=" << MAXIMUM_FFT_POINTS;
+        nSamples = MAXIMUM_FFT_POINTS;
+    }
 
     // Get data
     rpif->getDataArray(data_buf, nSamples);
@@ -243,9 +302,6 @@ void FFT::zeroPadding()
  */
 void FFT::convertDataToFloat()
 {
-    flData = (float*) malloc (sizeof(float)*iFFTWidth);
-    if (flData == NULL) {fputs ("Memory error buf",stderr); exit (2);}
-
     //convert to float
     for(int i = 0; i < iFFTWidth; i++)
     {
@@ -258,7 +314,6 @@ void FFT::convertDataToFloat()
 void FFT::plotData()
 {
     double rate = rpif->getSamplerate();
-    // convert to QVector
     x_vector.clear();
     y_vector.clear();
     x_vector.resize(iPlotWidth);
@@ -271,23 +326,41 @@ void FFT::plotData()
     }
 
     // Set plot data
-    plot->graph(0)->setData(x_vector, y_vector);
-    plot->rescaleAxes();
-    plot->replot();
+    /*! NOPE thats DEADLY DANGEROUS if you access the GUI-thread
+     * from another thread!! */
+    //plot->graph(0)->setData(x_vector, y_vector);
+    //plot->rescaleAxes();
+    //plot->replot();
 }
 
 void FFT::publishData()
 {
+    tstPublData *pubdat;
     mutex.lock();
 
-    data.mag.resize(iFFTWidth);
-    data.freq.resize(iFFTWidth);
+    data.mag.resize(iPlotWidth);
+    data.freq.resize(iPlotWidth);
 
     memcpy(data.mag.data(), y_vector.data(), iPlotWidth);
     memcpy(data.freq.data(), x_vector.data(), iPlotWidth);
 
     data.width = iFFTWidth;
     data.binsize = rpif->getSamplerate() / iFFTWidth;
+
+    //try to lock the shared memory
+//    if(sharedDataMemory.lock() == false)
+//    {
+//        qDebug() << "Could not lock shared memory for write";
+//    }
+//    else
+//    {
+//        pubdat = (tstPublData*)sharedDataMemory.data();
+//        pubdat->samplerate = rpif->getSamplerate();
+//        pubdat->fftwidth = iFFTWidth;
+//        pubdat->plotwidth = iPlotWidth;
+//        memcpy(&pubdat->data, flAmpSpec, iPlotWidth);
+//        sharedDataMemory.unlock();
+//    }
 
     mutex.unlock();
 }
