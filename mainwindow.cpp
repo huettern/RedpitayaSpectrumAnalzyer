@@ -29,8 +29,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_fft_thread->start();
 
     /*! connect FFT signal and plot slot */
-    connect(m_fft, SIGNAL(dataReady()),
-            m_plot, SLOT(on_dataReady()));
+//    connect(m_fft, SIGNAL(dataReady()),
+//            m_plot, SLOT(on_dataReady()));
 
     /*! Setup other widgets */
     m_ui->viewWidget->setRPif(m_rpif);

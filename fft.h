@@ -24,21 +24,6 @@ public:
     explicit FFT(QObject *parent = 0);
     ~FFT();
 
-    void setThread (QThread *thr);
-
-    int singleConversion();
-    void setRPif(RedpitayaInterface* ifc);
-    void setPlot(QCustomPlot *plt);
-
-    void setConConversionRunning (bool state);
-    void setRefreshInterval(unsigned int interval);
-    void setNumZeroes(unsigned int num);
-
-    size_t getVectorSize();
-
-    void FFT::getDataLock(QVector<double> *x, QVector<double> *y);
-    void getDataUnlock();
-
     // Data structure
     typedef struct {
         QVector<double> mag;
@@ -47,15 +32,6 @@ public:
         double binsize;
     } tstdata;
     tstdata data;
-
-    // Shared Memory Data structure
-    typedef struct {
-        double samplerate;
-        unsigned int fftwidth;
-        unsigned int plotwidth;
-        float data[(MAXIMUM_FFT_POINTS/2)+1];
-    } tstPublData;
-    //tstPublData stPublicData;
 
     // FFT Settings Structure
     typedef struct {
@@ -66,6 +42,17 @@ public:
         /*! Number of zeroes to append to the raw samples */
         unsigned int numZeroes;
     } tstFFTParams;
+
+    void setThread (QThread *thr);
+
+    int singleConversion();
+    void setRPif(RedpitayaInterface* ifc);
+    void setPlot(QCustomPlot *plt);
+
+    void setConConversionRunning (bool state);
+    void setRefreshInterval(unsigned int interval);
+    void setNumZeroes(unsigned int num);
+
 
 private:
     QCustomPlot         *plot;
@@ -79,7 +66,6 @@ private:
     int iPlotWidth; ///< Width of the Plot = iFFTWidth/2 + 1
 
     //plot data
-    QSharedMemory sharedDataMemory;
     QVector<double> x_vector;
     QVector<double> y_vector;
 
@@ -98,9 +84,6 @@ private:
 
 signals:
     void setStatusMsg (QString, int);
-    void dataReady();
-
-
 
 public slots:
     void do_continuousConversion();
