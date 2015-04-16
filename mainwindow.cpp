@@ -9,7 +9,9 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui->setupUi(this);
 
     //Setup Plot
-    m_plot = new SpectrumPlot(this, m_ui->plot);
+    m_plot = new SpectrumPlot(this);
+    m_plot->setPlot(m_ui->plot);
+    m_plot->setFFT(m_fft);
 
     //Setup Redpitaya object
     m_rpif = new RedpitayaInterface(this);
@@ -25,6 +27,10 @@ MainWindow::MainWindow(QWidget *parent) :
     m_fft->setThread(m_fft_thread);
     m_fft->moveToThread(m_fft_thread);
     m_fft_thread->start();
+
+    /*! connect FFT signal and plot slot */
+//    connect(m_fft, SIGNAL(dataReady()),
+//            m_plot, SLOT(on_dataReady()));
 
     /*! Setup other widgets */
     m_ui->viewWidget->setRPif(m_rpif);

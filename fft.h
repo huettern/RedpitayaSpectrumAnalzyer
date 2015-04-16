@@ -8,6 +8,9 @@
 #include "qcustomplot.h"
 #include "redpitayainterface.h"
 
+/*! Maximum number of points of the FFT. This is used to allocate memory */
+#define     MAXIMUM_FFT_POINTS                      1*1024*1024
+
 
 class QCustomPlot;
 class RedpitayaInterface;
@@ -20,16 +23,6 @@ class FFT : public QObject
 public:
     explicit FFT(QObject *parent = 0);
     ~FFT();
-
-    void setThread (QThread *thr);
-
-    int singleConversion();
-    void setRPif(RedpitayaInterface* ifc);
-    void setPlot(QCustomPlot *plt);
-
-    void setConConversionRunning (bool state);
-    void setRefreshInterval(unsigned int interval);
-    void setNumZeroes(unsigned int num);
 
     // Data structure
     typedef struct {
@@ -50,9 +43,20 @@ public:
         unsigned int numZeroes;
     } tstFFTParams;
 
+    void setThread (QThread *thr);
+
+    int singleConversion();
+    void setRPif(RedpitayaInterface* ifc);
+    void setPlot(QCustomPlot *plt);
+
+    void setConConversionRunning (bool state);
+    void setRefreshInterval(unsigned int interval);
+    void setNumZeroes(unsigned int num);
+
+
 private:
-    QCustomPlot *plot;
-    RedpitayaInterface *rpif;
+    QCustomPlot         *plot;
+    RedpitayaInterface  *rpif;
 
     // Data buffer
     int16_t* data_buf;
@@ -80,8 +84,6 @@ private:
 
 signals:
     void setStatusMsg (QString, int);
-
-
 
 public slots:
     void do_continuousConversion();

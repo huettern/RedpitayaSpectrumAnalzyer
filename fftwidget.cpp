@@ -21,6 +21,7 @@ FFTWidget::FFTWidget(QWidget *parent) :
     par.sampleRate = 15625000;
     par.effectiveRate = 15625000;
     par.refreshRate = 5;
+    par.zeroPads = 0;
     params->append(par);
 
     ui->templateComboBox->addItem("Audio Spectrum");
@@ -28,8 +29,18 @@ FFTWidget::FFTWidget(QWidget *parent) :
     par.sampleRate = 125000000/2048;
     par.effectiveRate = 125000000/2048;
     par.refreshRate = 5;
+    par.zeroPads = 0;
     params->append(par);
 
+    ui->templateComboBox->addItem("Testing");
+    par.blockSize = 16;
+    par.sampleRate = 125000000/8;
+    par.effectiveRate = 125000000/8;
+    par.refreshRate = 20;
+    par.zeroPads = 0;
+    params->append(par);
+
+    ui->templateComboBox->setCurrentIndex(2);
     tempaltesFilled = true;
 }
 
@@ -128,6 +139,7 @@ void FFTWidget::on_templateComboBox_currentIndexChanged(int index)
     ui->SampleRateBox->setValue(par.sampleRate);
     ui->RefreshRateBox->setValue(par.refreshRate);
     ui->BlockSizeBox->setValue(par.blockSize);
+    ui->zeroPadBox->setValue(par.zeroPads);
 }
 
 void FFTWidget::on_applyBtn_clicked()
