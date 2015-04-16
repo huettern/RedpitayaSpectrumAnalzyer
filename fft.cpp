@@ -35,6 +35,7 @@ float             *flAmpSpec;   // spectrum
 FFT::FFT(QObject *parent) : QObject(parent)
 {
     runContConv = false;
+    m_abort = false;
     FFTParams.nSamples = 0;
     FFTParams.refreshRate = 1;
     FFTParams.numZeroes = 0;
@@ -53,6 +54,11 @@ FFT::~FFT()
 void FFT::setThread (QThread *thr)
 {
     connect(thr, SIGNAL(started()), this, SLOT(do_continuousConversion()));
+}
+
+void FFT::abortThread()
+{
+    m_abort = true;
 }
 
 /**
@@ -86,9 +92,9 @@ int FFT::singleConversion()
     tim.start();
     emit dataReady(x_vector, y_vector);
 
-    unsigned long time =tim.nsecsElapsed()/1000;
-    // clean up
-    qDebug() << "dataReady emit time[us]=" << time;
+//    unsigned long time =tim.nsecsElapsed()/1000;
+//    // clean up
+//    qDebug() << "dataReady emit time[us]=" << time;
     return 0;
 }
 
@@ -126,7 +132,7 @@ void FFT::setNumZeroes(unsigned int num)
 void FFT::do_continuousConversion()
 {
     unsigned long timeUs = 0;
-    while(true)
+    while(m_abort == false)
     {
         thread->usleep(timeUs);
         timeUs = 0;
@@ -143,6 +149,7 @@ void FFT::do_continuousConversion()
         }
         mutex.unlock();
     }
+    qDebug() << "exiting FFT thread";
 }
 
 /****************************************************************************

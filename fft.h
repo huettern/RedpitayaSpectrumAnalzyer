@@ -44,6 +44,7 @@ public:
     } tstFFTParams;
 
     void setThread (QThread *thr);
+    void abortThread ();
 
     int singleConversion();
     void setRPif(RedpitayaInterface* ifc);
@@ -58,6 +59,8 @@ private:
     QCustomPlot         *plot;
     RedpitayaInterface  *rpif;
 
+
+
     // Data buffer
     int16_t* data_buf;
 
@@ -69,6 +72,7 @@ private:
     QVector<double> x_vector;
     QVector<double> y_vector;
 
+    bool m_abort; //tell thread to stop
     QThread *thread;
     QMutex mutex;
     bool runContConv;

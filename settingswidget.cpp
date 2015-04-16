@@ -19,6 +19,7 @@ SettingsWidget::SettingsWidget(QWidget *parent) :
 
 SettingsWidget::~SettingsWidget()
 {
+    delete m_consolewindow;
     delete ui;
 }
 

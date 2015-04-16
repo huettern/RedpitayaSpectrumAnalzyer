@@ -45,6 +45,18 @@ MainWindow::~MainWindow()
 {
     m_rpif->Disconnect();
 
+    m_fft->abortThread(); //Tell the thread to abort
+    if(!m_fft_thread->wait(5000)) //Wait until it actually has terminated (max. 5 sec)
+    {
+        qWarning("Thread deadlock detected, bad things may happen !!!");
+        m_fft_thread->terminate(); //Thread didn't exit in time, probably deadlocked, terminate it!
+        m_fft_thread->wait(); //Note: We have to wait again here!
+    }
+
+    delete m_rpif;
+    delete m_fft;
+    delete m_plot;
+    delete m_fft_thread;
     delete m_ui;
 }
 

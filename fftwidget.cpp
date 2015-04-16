@@ -47,6 +47,7 @@ FFTWidget::FFTWidget(QWidget *parent) :
 FFTWidget::~FFTWidget()
 {
     delete ui;
+    delete params;
 }
 
 void FFTWidget::setRPif(RedpitayaInterface* ifc)
