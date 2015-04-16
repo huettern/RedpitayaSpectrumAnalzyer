@@ -63,7 +63,6 @@ void FFT::setThread (QThread *thr)
 int FFT::singleConversion()
 {
     QElapsedTimer tim;
-    tim.start();
 
     // Get Data
     getRawData();
@@ -84,10 +83,12 @@ int FFT::singleConversion()
 
     // Publish Data
     publishData();
+    tim.start();
     emit dataReady(x_vector, y_vector);
 
+    unsigned long time =tim.nsecsElapsed()/1000;
     // clean up
-    qDebug() << "FFT time" << tim.nsecsElapsed();
+    qDebug() << "dataReady emit time[us]=" << time;
     return 0;
 }
 
@@ -167,8 +168,8 @@ void FFT::allocData ()
 void FFT::freeData ()
 {
     // TODO: Fails if zeropadding is enabled
-    x_vector.clear();
-    y_vector.clear();
+//    x_vector.clear();
+//    y_vector.clear();
 }
 
 void FFT::getRawData ()
@@ -198,7 +199,7 @@ void FFT::zeroPadding()
 {
     size_t nsamples = FFTParams.nSamples;
     unsigned int nzeroes = FFTParams.numZeroes;
-    int16_t *buf;
+    unsigned int nzeroesReal;
 
     // if no zeropadding needed, exit here
     iFFTWidth = FFTParams.nSamples;
@@ -212,34 +213,26 @@ void FFT::zeroPadding()
 
     // check for buffer overflow (this should really NEVER happen)
     if(exp == 0) while(1) qDebug() << "FATAL";
-
     iFFTWidth = pow(2, exp);
+    nzeroesReal = iFFTWidth - nsamples;
     iPlotWidth = (iFFTWidth/2) + 1;
 
-    // alloc new data
-    buf = (int16_t*)malloc(sizeof(int16_t)*iFFTWidth);
-    if (buf == NULL) {fputs ("Memory error buf",stderr); exit(2);}
+    // fill databuffer with zeroes
+    memset((data_buf + nsamples), 0, nzeroesReal);
 
-    // copy new data
-    memset(buf, 0, sizeof(int16_t)*iFFTWidth);
-    memcpy(buf, data_buf, sizeof(int16_t)*nsamples);
-    free(data_buf);
-    data_buf = buf;
-    free(buf);
     // done
-    qDebug() << "\nnsamples:              " << nsamples
-             << "\nnzeroes:               " << nzeroes
-             << "\niFFTWidth:             " << iFFTWidth
-             << "\ndata_buf[0]            " << data_buf[0]
-             << "\nbuf[0]                 " << buf[0]
-             << "\ndata_buf[1]            " << data_buf[1]
-             << "\nbuf[1]                 " << buf[1]
-             << "\ndata_buf[nsamples-1]   " << data_buf[nsamples-1]
-             << "\nbuf[nsamples-1]        " << buf[nsamples-1]
-             << "\ndata_buf[nsamples]     " << data_buf[nsamples]
-             << "\nbuf[nsamples]          " << buf[nsamples]
-             << "\nbuf[iFFTWidth-1]       " << buf[iFFTWidth-1] ;
-
+//    qDebug() << "\nnsamples:              " << nsamples
+//             << "\nnzeroes:               " << nzeroes
+//             << "\niFFTWidth:             " << iFFTWidth
+//             << "\ndata_buf[0]            " << data_buf[0]
+//             << "\nbuf[0]                 " << buf[0]
+//             << "\ndata_buf[1]            " << data_buf[1]
+//             << "\nbuf[1]                 " << buf[1]
+//             << "\ndata_buf[nsamples-1]   " << data_buf[nsamples-1]
+//             << "\nbuf[nsamples-1]        " << buf[nsamples-1]
+//             << "\ndata_buf[nsamples]     " << data_buf[nsamples]
+//             << "\nbuf[nsamples]          " << buf[nsamples]
+//             << "\nbuf[iFFTWidth-1]       " << buf[iFFTWidth-1] ;
 }
 
 /**
@@ -267,7 +260,7 @@ void FFT::plotData()
 
     for(int i = 0; i < iPlotWidth; i++)
     {
-        y_vector[i] = (double)flAmpSpec[i] / (iFFTWidth/2);
+        y_vector[i] = (double)flAmpSpec[i] / (FFTParams.nSamples/2);
         x_vector[i] = i*(rate/iFFTWidth);
     }
 

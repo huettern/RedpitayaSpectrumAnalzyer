@@ -1,6 +1,9 @@
 #include "spectrumplot.h"
+#include "helper.h"
 
 #include <QDebug>
+
+#include <unistd.h>
 
 SpectrumPlot::SpectrumPlot(QObject *parent) : QObject(parent)
 {
@@ -84,7 +87,6 @@ void SpectrumPlot::setFFT(FFT *fft)
 
 void SpectrumPlot::onDataChanged(QVector<double> xv, QVector<double> yv)
 {
-    qDebug() << "onDataChanged";
     m_plot->graph(0)->setData(xv, yv);
     m_plot->replot();
 }

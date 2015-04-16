@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_fft_thread = new QThread();
     m_fft->setThread(m_fft_thread);
     m_fft->moveToThread(m_fft_thread);
-    m_fft_thread->start();
+    m_fft_thread->start(QThread::NormalPriority);
 
     /*! connect FFT signal and plot slot */
     qRegisterMetaType<QVector<double> >("QVector<double>");
