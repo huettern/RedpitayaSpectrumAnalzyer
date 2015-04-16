@@ -46,7 +46,10 @@ RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
 
 RedpitayaInterface::~RedpitayaInterface()
 {
+    free(publish_data_buf);
+    free(data_buf);
 
+    delete serial;
 }
 
 /**
@@ -422,6 +425,7 @@ int RedpitayaInterface::rcvData ()
 
     // Close TCP socket
     close(sockfd);
+    free(data_buf); data_buf = NULL;
 
     // done
     emit dataReady();

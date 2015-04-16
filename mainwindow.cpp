@@ -26,11 +26,12 @@ MainWindow::MainWindow(QWidget *parent) :
     m_fft_thread = new QThread();
     m_fft->setThread(m_fft_thread);
     m_fft->moveToThread(m_fft_thread);
-    m_fft_thread->start();
+    m_fft_thread->start(QThread::NormalPriority);
 
     /*! connect FFT signal and plot slot */
-//    connect(m_fft, SIGNAL(dataReady()),
-//            m_plot, SLOT(on_dataReady()));
+    qRegisterMetaType<QVector<double> >("QVector<double>");
+    connect(m_fft, SIGNAL(dataReady(QVector<double>,QVector<double>)),
+            m_plot, SLOT(onDataChanged(QVector<double>,QVector<double>)));
 
     /*! Setup other widgets */
     m_ui->viewWidget->setRPif(m_rpif);
@@ -44,6 +45,18 @@ MainWindow::~MainWindow()
 {
     m_rpif->Disconnect();
 
+    m_fft->abortThread(); //Tell the thread to abort
+    if(!m_fft_thread->wait(5000)) //Wait until it actually has terminated (max. 5 sec)
+    {
+        qWarning("Thread deadlock detected, bad things may happen !!!");
+        m_fft_thread->terminate(); //Thread didn't exit in time, probably deadlocked, terminate it!
+        m_fft_thread->wait(); //Note: We have to wait again here!
+    }
+
+    delete m_rpif;
+    delete m_fft;
+    delete m_plot;
+    delete m_fft_thread;
     delete m_ui;
 }
 

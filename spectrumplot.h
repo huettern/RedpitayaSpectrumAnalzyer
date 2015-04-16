@@ -22,6 +22,7 @@ public:
 signals:
 
 public slots:
+    void onDataChanged (QVector<double> xv, QVector<double> yv);
 
 private:
     QCustomPlot     *m_plot;
