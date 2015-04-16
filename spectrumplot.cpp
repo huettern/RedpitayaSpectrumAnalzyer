@@ -81,3 +81,10 @@ void SpectrumPlot::setFFT(FFT *fft)
 {
     m_fft = fft;
 }
+
+void SpectrumPlot::onDataChanged(QVector<double> xv, QVector<double> yv)
+{
+    qDebug() << "onDataChanged";
+    m_plot->graph(0)->setData(xv, yv);
+    m_plot->replot();
+}

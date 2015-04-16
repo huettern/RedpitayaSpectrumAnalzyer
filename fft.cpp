@@ -84,6 +84,7 @@ int FFT::singleConversion()
 
     // Publish Data
     publishData();
+    emit dataReady(x_vector, y_vector);
 
     // clean up
     qDebug() << "FFT time" << tim.nsecsElapsed();
@@ -273,8 +274,8 @@ void FFT::plotData()
     // Set plot data
     /*! NOPE thats DEADLY DANGEROUS if you access the GUI-thread
      * from another thread!! */
-    plot->graph(0)->setData(x_vector, y_vector);
-    plot->replot();
+//    plot->graph(0)->setData(x_vector, y_vector);
+//    plot->replot();
 }
 
 void FFT::publishData()

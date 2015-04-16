@@ -84,6 +84,7 @@ private:
 
 signals:
     void setStatusMsg (QString, int);
+    void dataReady(QVector<double>, QVector<double>);
 
 public slots:
     void do_continuousConversion();
