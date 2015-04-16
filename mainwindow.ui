@@ -124,7 +124,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>3</number>
           </property>
           <property name="documentMode">
            <bool>false</bool>
@@ -155,7 +155,7 @@
           </widget>
           <widget class="QWidget" name="settings">
            <attribute name="title">
-            <string>Settings</string>
+            <string>COM Settings</string>
            </attribute>
            <widget class="SettingsWidget" name="settingswidget" native="true">
             <property name="geometry">
@@ -182,6 +182,16 @@
              </rect>
             </property>
            </widget>
+          </widget>
+          <widget class="QWidget" name="parameter">
+           <attribute name="title">
+            <string>Parameter</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="ParameterWidget" name="parameterwidget" native="true"/>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -227,6 +237,12 @@
    <class>FFTWidget</class>
    <extends>QWidget</extends>
    <header>fftwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ParameterWidget</class>
+   <extends>QWidget</extends>
+   <header>parameterwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

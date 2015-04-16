@@ -39,6 +39,10 @@ FFT::FFT(QObject *parent) : QObject(parent)
     FFTParams.nSamples = 0;
     FFTParams.refreshRate = 1;
     FFTParams.numZeroes = 0;
+    FFTParams.elapsedTimeUs = 0;
+    FFTParams.resolution = 0;
+    FFTParams.visiblePoints = 0;
+  //  FFTParams.window = NONE;
     allocData();
 }
 
@@ -69,6 +73,7 @@ void FFT::abortThread()
 int FFT::singleConversion()
 {
     QElapsedTimer tim;
+    tim.start();
 
     // Get Data
     getRawData();
@@ -89,10 +94,10 @@ int FFT::singleConversion()
 
     // Publish Data
     publishData();
-    tim.start();
     emit dataReady(x_vector, y_vector);
 
-//    unsigned long time =tim.nsecsElapsed()/1000;
+
+    FFTParams.elapsedTimeUs = tim.nsecsElapsed()/1000;
 //    // clean up
 //    qDebug() << "dataReady emit time[us]=" << time;
     return 0;
@@ -122,6 +127,11 @@ void FFT::setRefreshInterval(unsigned int interval)
 void FFT::setNumZeroes(unsigned int num)
 {
     FFTParams.numZeroes = num;
+}
+
+FFT::tstFFTParams FFT::getParams()
+{
+    return FFTParams;
 }
 
 /****************************************************************************
@@ -290,6 +300,10 @@ void FFT::publishData()
 
     data.width = iFFTWidth;
     data.binsize = rpif->getSamplerate() / iFFTWidth;
+
+    FFTParams.resolution = data.binsize;
+    FFTParams.visiblePoints = iPlotWidth;
+    //FFTParams.window = NONE;
 
     //mutex.unlock();
 }

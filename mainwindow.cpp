@@ -39,6 +39,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_ui->fftwidget->setRPif(m_rpif);
     m_ui->fftwidget->setFFTObj(m_fft);
+
+    m_ui->parameterwidget->setRPif(m_rpif);
+    m_ui->parameterwidget->setFFTObj(m_fft);
+
 }
 
 MainWindow::~MainWindow()

@@ -71,6 +71,8 @@ public:
     size_t getDataArray (void* dest, size_t n);
     size_t getDataArraySize ();
 
+    tsRPStreamParams getStreamParams ();
+
     // Settings Handling
     void setDecimation(unsigned int dec);
     void setBlockSize(unsigned int numkbytes);

@@ -229,6 +229,11 @@ size_t RedpitayaInterface::getDataArraySize ()
     return numbytes;
 }
 
+RedpitayaInterface::tsRPStreamParams RedpitayaInterface::getStreamParams()
+{
+    return publish_data_buf_params;
+}
+
 /**
  * @brief RedpitayaInterface::getSamplerate
  * @return the sample rate of the current settings
