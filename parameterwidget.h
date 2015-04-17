@@ -23,6 +23,7 @@ public:
 
     void setRPif(RedpitayaInterface* ifc);
     void setFFTObj(FFT* obj);
+    void setRunning(bool state);
 
 
 protected:
@@ -34,6 +35,8 @@ private:
     FFT *fft;
 
     int parameter_ctr;
+    int timerID;
+    bool timerRunning;
 
 };
 
