@@ -1,0 +1,8 @@
+install:
+  - sudo apt-get update
+  - sudo apt-get build-dep qt5-default
+  - sudo apt-get install libqt5serialport5 libqt5serialport5-dev qt5-qmake qt5-default
+
+script:
+  - qmake SpectrumAnalyzer.pro
+  - make
