@@ -39,6 +39,11 @@ RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
     rpStreamParams.numKBytes = 16;
     rpStreamParams.reportRate = false;
     rpStreamParams.port = 1234;
+    rpStreamParams.acquireDuration =
+            (1024*rpStreamParams.numKBytes) /
+            (125000000/(double)rpStreamParams.decimation);
+
+
     serial = new QSerialPort(this);
 
     publish_data_buf = NULL;
@@ -231,6 +236,7 @@ size_t RedpitayaInterface::getDataArraySize ()
 
 RedpitayaInterface::tsRPStreamParams RedpitayaInterface::getStreamParams()
 {
+    publish_data_buf_params = rpStreamParams;
     return publish_data_buf_params;
 }
 
@@ -251,6 +257,9 @@ double RedpitayaInterface::getSamplerate(void)
 void RedpitayaInterface::setDecimation(unsigned int dec)
 {
     rpStreamParams.decimation = dec;
+    rpStreamParams.acquireDuration =
+            (1024*rpStreamParams.numKBytes) /
+            (125000000/(double)rpStreamParams.decimation);
 }
 
 /**
@@ -261,6 +270,9 @@ void RedpitayaInterface::setDecimation(unsigned int dec)
 void RedpitayaInterface::setBlockSize(unsigned int numkbytes)
 {
     rpStreamParams.numKBytes = numkbytes;
+    rpStreamParams.acquireDuration =
+            (1024*rpStreamParams.numKBytes) /
+            (125000000/(double)rpStreamParams.decimation);
 }
 
 /****************************************************************************
@@ -330,6 +342,9 @@ int RedpitayaInterface::startServer()
     mutex.unlock();
 
     rpStreamParams.reportRate = true;
+    rpStreamParams.acquireDuration =
+            (1024*rpStreamParams.numKBytes) /
+            (125000000/(double)rpStreamParams.decimation);
 
     QString flags = NULL;
     if(rpStreamParams.noEQ)

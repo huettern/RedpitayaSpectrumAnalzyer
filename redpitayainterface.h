@@ -58,6 +58,8 @@ public:
         bool                noEQ;
         /*! Disable Shaping */
         bool                noShaping;
+        /*! Time to sample the number of given samples at the given rate */
+        double              acquireDuration;
     } tsRPStreamParams;
 
     int startStream ();
