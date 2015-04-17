@@ -24,6 +24,10 @@ public:
     explicit FFT(QObject *parent = 0);
     ~FFT();
 
+    typedef enum {
+        NONE
+    } tenWindows;
+
     // Data structure
     typedef struct {
         QVector<double> mag;
@@ -35,12 +39,22 @@ public:
 
     // FFT Settings Structure
     typedef struct {
+        /*! Number of ploted points */
+        unsigned int visiblePoints;
+        /*! Resolution per bin */
+        float resolution;
+        /*! Windowing method */
+ //       tenWindows window;
         /*! Number of raw input sample points */
         size_t nSamples;
         /*! Number of token Samples per secons */
         unsigned int refreshRate;
-        /*! Number of zeroes to append to the raw samples */
+        /*! Desired Number of zeroes to append to the raw samples */
         unsigned int numZeroes;
+        /*! Real Number of zeroes to append to the raw samples */
+        unsigned int numZeroesReal;
+        /*! Time to calculate FFT */
+        unsigned long elapsedTimeUs;
     } tstFFTParams;
 
     void setThread (QThread *thr);
@@ -54,6 +68,7 @@ public:
     void setRefreshInterval(unsigned int interval);
     void setNumZeroes(unsigned int num);
 
+    FFT::tstFFTParams getParams();
 
 private:
     QCustomPlot         *plot;

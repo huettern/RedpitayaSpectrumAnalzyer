@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     consolewindow.cpp \
     helper.cpp \
     fft.cpp \
-    plotview.cpp
+    plotview.cpp \
+    parameterwidget.cpp
 
 HEADERS  += mainwindow.h \
     qcustomplot.h \
@@ -40,11 +41,13 @@ HEADERS  += mainwindow.h \
     consolewindow.h \
     helper.h \
     fft.h \
-    plotview.h
+    plotview.h \
+    parameterwidget.h
 
 FORMS    += mainwindow.ui \
     viewwidget.ui \
     settingswidget.ui \
     fftwidget.ui \
     consolewindow.ui \
-    plotview.ui
+    plotview.ui \
+    parameterwidget.ui

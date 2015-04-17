@@ -58,6 +58,8 @@ public:
         bool                noEQ;
         /*! Disable Shaping */
         bool                noShaping;
+        /*! Time to sample the number of given samples at the given rate */
+        double              acquireDuration;
     } tsRPStreamParams;
 
     int startStream ();
@@ -70,6 +72,8 @@ public:
     // Data handling
     size_t getDataArray (void* dest, size_t n);
     size_t getDataArraySize ();
+
+    tsRPStreamParams getStreamParams ();
 
     // Settings Handling
     void setDecimation(unsigned int dec);

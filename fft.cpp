@@ -39,6 +39,10 @@ FFT::FFT(QObject *parent) : QObject(parent)
     FFTParams.nSamples = 0;
     FFTParams.refreshRate = 1;
     FFTParams.numZeroes = 0;
+    FFTParams.elapsedTimeUs = 0;
+    FFTParams.resolution = 0;
+    FFTParams.visiblePoints = 0;
+  //  FFTParams.window = NONE;
     allocData();
 }
 
@@ -53,6 +57,7 @@ FFT::~FFT()
 
 void FFT::setThread (QThread *thr)
 {
+    thread = thr;
     connect(thr, SIGNAL(started()), this, SLOT(do_continuousConversion()));
 }
 
@@ -69,6 +74,7 @@ void FFT::abortThread()
 int FFT::singleConversion()
 {
     QElapsedTimer tim;
+    tim.start();
 
     // Get Data
     getRawData();
@@ -89,10 +95,10 @@ int FFT::singleConversion()
 
     // Publish Data
     publishData();
-    tim.start();
     emit dataReady(x_vector, y_vector);
 
-//    unsigned long time =tim.nsecsElapsed()/1000;
+
+    FFTParams.elapsedTimeUs = tim.nsecsElapsed()/1000;
 //    // clean up
 //    qDebug() << "dataReady emit time[us]=" << time;
     return 0;
@@ -124,6 +130,11 @@ void FFT::setNumZeroes(unsigned int num)
     FFTParams.numZeroes = num;
 }
 
+FFT::tstFFTParams FFT::getParams()
+{
+    return FFTParams;
+}
+
 /****************************************************************************
  * PUBLIC SLOTS SECTION
  -----------------------------------------------------------------------*//**
@@ -136,18 +147,18 @@ void FFT::do_continuousConversion()
     {
         thread->usleep(timeUs);
         timeUs = 0;
-        mutex.lock();
+        //mutex.lock();
         if(runContConv == true)
         {
             qDebug() << "if(runContConv == true)";
             timeUs = 1000000 / FFTParams.refreshRate;
-            mutex.unlock();
+          //  mutex.unlock();
             // Do acq and fft
             if(rpif->singleAcquisition()) stopContConv();
             else if (singleConversion())  stopContConv();
             qDebug() << "singleConversion done";
         }
-        mutex.unlock();
+        //mutex.unlock();
     }
     qDebug() << "exiting FFT thread";
 }
@@ -290,6 +301,11 @@ void FFT::publishData()
 
     data.width = iFFTWidth;
     data.binsize = rpif->getSamplerate() / iFFTWidth;
+
+    FFTParams.resolution = data.binsize;
+    FFTParams.visiblePoints = iPlotWidth;
+    FFTParams.numZeroesReal = iFFTWidth - FFTParams.nSamples;
+    //FFTParams.window = NONE;
 
     //mutex.unlock();
 }
