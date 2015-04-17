@@ -49,8 +49,10 @@ public:
         size_t nSamples;
         /*! Number of token Samples per secons */
         unsigned int refreshRate;
-        /*! Number of zeroes to append to the raw samples */
+        /*! Desired Number of zeroes to append to the raw samples */
         unsigned int numZeroes;
+        /*! Real Number of zeroes to append to the raw samples */
+        unsigned int numZeroesReal;
         /*! Time to calculate FFT */
         unsigned long elapsedTimeUs;
     } tstFFTParams;

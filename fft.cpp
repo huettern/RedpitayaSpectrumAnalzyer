@@ -57,6 +57,7 @@ FFT::~FFT()
 
 void FFT::setThread (QThread *thr)
 {
+    thread = thr;
     connect(thr, SIGNAL(started()), this, SLOT(do_continuousConversion()));
 }
 
@@ -146,18 +147,18 @@ void FFT::do_continuousConversion()
     {
         thread->usleep(timeUs);
         timeUs = 0;
-        mutex.lock();
+        //mutex.lock();
         if(runContConv == true)
         {
             qDebug() << "if(runContConv == true)";
             timeUs = 1000000 / FFTParams.refreshRate;
-            mutex.unlock();
+          //  mutex.unlock();
             // Do acq and fft
             if(rpif->singleAcquisition()) stopContConv();
             else if (singleConversion())  stopContConv();
             qDebug() << "singleConversion done";
         }
-        mutex.unlock();
+        //mutex.unlock();
     }
     qDebug() << "exiting FFT thread";
 }
@@ -303,6 +304,7 @@ void FFT::publishData()
 
     FFTParams.resolution = data.binsize;
     FFTParams.visiblePoints = iPlotWidth;
+    FFTParams.numZeroesReal = iFFTWidth - FFTParams.nSamples;
     //FFTParams.window = NONE;
 
     //mutex.unlock();
