@@ -279,6 +279,9 @@ void FFT::plotData()
     for(int i = 0; i < iPlotWidth; i++)
     {
         y_vector[i] = (double)flAmpSpec[i] / (FFTParams.nSamples/2);
+        // convert to amp values according to current probe set to 1A range
+        // 1V/100A
+        y_vector[i] = y_vector[i] * 100;
         x_vector[i] = i*(rate/iFFTWidth);
     }
 

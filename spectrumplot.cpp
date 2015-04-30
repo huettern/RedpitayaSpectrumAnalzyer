@@ -27,7 +27,7 @@ void SpectrumPlot::setPlot(QCustomPlot *qcplot)
 
     // give the axes some labels:
     m_plot->xAxis->setLabel("Frequency [Hz]");
-    m_plot->yAxis->setLabel("Magnitude [Vp]");
+    m_plot->yAxis->setLabel("Magnitude [Ap]");
     m_plot->xAxis->setLabelColor(QColor(Qt::white));
     m_plot->xAxis->setLabelFont(QFont("Arial", 20, 1, false));
     m_plot->yAxis->setLabelColor(QColor(Qt::white));
