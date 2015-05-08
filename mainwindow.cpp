@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<QVector<double> >("QVector<double>");
     connect(m_fft, SIGNAL(dataReady(QVector<double>,QVector<double>)),
             m_plot, SLOT(onDataChanged(QVector<double>,QVector<double>)));
+    connect(m_fft, SIGNAL(singleAcquisitionRequest()),
+            m_rpif, SLOT(on_SingleAcquisitionRequest()));
 
     /*! Setup other widgets */
     m_ui->viewWidget->setRPif(m_rpif);

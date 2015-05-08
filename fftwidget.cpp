@@ -40,6 +40,14 @@ FFTWidget::FFTWidget(QWidget *parent) :
     par.zeroPads = 0;
     params->append(par);
 
+    ui->templateComboBox->addItem("Presentation");
+    par.blockSize = 16;
+    par.sampleRate = 125000000/64;
+    par.effectiveRate = 125000000/64;
+    par.refreshRate = 15;
+    par.zeroPads = 0;
+    params->append(par);
+
     ui->templateComboBox->setCurrentIndex(2);
     tempaltesFilled = true;
 }

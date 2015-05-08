@@ -150,13 +150,15 @@ void FFT::do_continuousConversion()
         //mutex.lock();
         if(runContConv == true)
         {
-            qDebug() << "if(runContConv == true)";
             timeUs = 1000000 / FFTParams.refreshRate;
           //  mutex.unlock();
             // Do acq and fft
-            if(rpif->singleAcquisition()) stopContConv();
+            emit singleAcquisitionRequest();
+            while(rpif->getsingleAcquisitionRunning() == true);
+            if (rpif->getrcvError() == true) stopContConv();
             else if (singleConversion())  stopContConv();
-            qDebug() << "singleConversion done";
+            //if(rpif->singleAcquisition()) stopContConv();
+            //else if (singleConversion())  stopContConv();
         }
         //mutex.unlock();
     }

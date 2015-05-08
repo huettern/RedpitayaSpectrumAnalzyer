@@ -47,6 +47,8 @@ RedpitayaInterface::RedpitayaInterface(QObject *parent) : QObject(parent)
     serial = new QSerialPort(this);
 
     publish_data_buf = NULL;
+    singleAcquisitionRunning = false;
+    rcvError = false;
 }
 
 RedpitayaInterface::~RedpitayaInterface()
@@ -275,6 +277,29 @@ void RedpitayaInterface::setBlockSize(unsigned int numkbytes)
             (125000000/(double)rpStreamParams.decimation);
 }
 
+bool RedpitayaInterface::getsingleAcquisitionRunning()
+{
+    return singleAcquisitionRunning;
+}
+
+bool RedpitayaInterface::getrcvError()
+{
+    return rcvError;
+}
+
+/****************************************************************************
+ * PUBLIC SLOTS SECTION
+ -----------------------------------------------------------------------*//**
+ * @privatesection
+ ****************************************************************************/
+void RedpitayaInterface::on_SingleAcquisitionRequest()
+{
+    singleAcquisitionRunning = true;
+    singleAcquisition();
+    singleAcquisitionRunning = false;
+}
+
+
 /****************************************************************************
  * PRIVATE SECTION
  -----------------------------------------------------------------------*//**
@@ -389,6 +414,7 @@ int RedpitayaInterface::stopServer()
  */
 int RedpitayaInterface::rcvData ()
 {
+    rcvError = false;
 //    QElapsedTimer timer;
 //    timer.start();
 
@@ -423,11 +449,12 @@ int RedpitayaInterface::rcvData ()
            qDebug() << "\n Error : Connect Failed";
            qDebug() << " Err: " << errno << strerror(errno);
            qDebug() << "\n Sockfd=" << sockfd;
+           rcvError = true;
            return errno;
         }
         else
         {
-            qDebug() << "Connection established";
+            //qDebug() << "Connection established";
             //rpState = TCP_CONNECTED;
         }
     }

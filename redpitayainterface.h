@@ -79,11 +79,16 @@ public:
     void setDecimation(unsigned int dec);
     void setBlockSize(unsigned int numkbytes);
 
+    // status
+    bool getsingleAcquisitionRunning();
+    bool getrcvError();
+
 signals:
     void setStatusMsg (QString, int);
     void dataReady();
 
 public slots:
+    void on_SingleAcquisitionRequest();
 
 private slots:
     void readData();
@@ -104,6 +109,8 @@ private:
     unsigned long n_packets;
 
     bool running;
+    bool singleAcquisitionRunning;
+    bool rcvError;
 
     // Data for serial port
     QSerialPort* serial;
