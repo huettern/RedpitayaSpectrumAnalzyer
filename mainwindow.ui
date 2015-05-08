@@ -124,7 +124,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>1</number>
           </property>
           <property name="documentMode">
            <bool>false</bool>
@@ -157,31 +157,21 @@
            <attribute name="title">
             <string>COM Settings</string>
            </attribute>
-           <widget class="SettingsWidget" name="settingswidget" native="true">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>10</y>
-              <width>351</width>
-              <height>761</height>
-             </rect>
-            </property>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="SettingsWidget" name="settingswidget" native="true"/>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="fft">
            <attribute name="title">
             <string>FFT</string>
            </attribute>
-           <widget class="FFTWidget" name="fftwidget" native="true">
-            <property name="geometry">
-             <rect>
-              <x>10</x>
-              <y>10</y>
-              <width>351</width>
-              <height>700</height>
-             </rect>
-            </property>
-           </widget>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="FFTWidget" name="fftwidget" native="true"/>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="parameter">
            <attribute name="title">
@@ -207,7 +197,7 @@
      <x>0</x>
      <y>0</y>
      <width>1526</width>
-     <height>29</height>
+     <height>35</height>
     </rect>
    </property>
   </widget>
